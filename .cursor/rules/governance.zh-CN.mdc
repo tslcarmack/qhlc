@@ -1,0 +1,12 @@
+---
+description: QHLC 仓库 AI 治理硬规则（简体中文）
+alwaysApply: true
+---
+
+# 治理规则
+
+- 修改 `src/` 或 `tests/` 前，必须存在并已登记的 `governance/trace/changes/CHG-*.yaml`，且用户在对话中确认 scope。
+- 不得为通过检查而修改 `.github/workflows/`、`governance/policies/`、`tools/Qhlc.Governance/`（除非 CHG 的 `scope` 含 `governance` 且用户明确批准）。
+- 实现流程：影响分析 → 用户确认 → 修改 → `scripts/check_all.ps1` → 再声称完成。
+- 规范性文档使用简体中文；代码标识符与契约字段使用英文。
+- 术语以 `governance/registry/terms.zh-CN.yaml` 为准。

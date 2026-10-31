@@ -1,0 +1,33 @@
+id: CHG-0001
+title: 实现 AI 治理起步包
+requirements:
+  - REQ-0001
+scope:
+  - governance
+  - core
+impact:
+  modules:
+    - MOD-CORE
+  apis:
+    - API-0001
+  data_migration: false
+  manual_review: []
+acceptance:
+  - 解决方案可构建
+  - 治理 CLI check all 通过
+verification:
+  tests:
+    - TEST-0001
+  checks:
+    - architecture
+    - contracts
+    - doc-language
+documentation:
+  - docs/governance/QUICKSTART.zh-CN.md
+recovery:
+  rollback: code_only
+  notes: 首版无数据库迁移
+approvals:
+  implementer: self
+  reviewer: optional
+  merged_by: self

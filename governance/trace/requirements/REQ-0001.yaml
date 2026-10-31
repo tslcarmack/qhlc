@@ -1,0 +1,14 @@
+id: REQ-0001
+title: 治理起步包可构建与可验证
+module: MOD-CORE
+status: active
+acceptance:
+  - dotnet build 通过
+  - check-all 通过
+implements:
+  apis:
+    - API-0001
+  tests:
+    - TEST-0001
+related_adrs:
+  - ADR-0001

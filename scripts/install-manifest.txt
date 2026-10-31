@@ -1,0 +1,7 @@
+governance/
+tools/Qhlc.Governance/
+scripts/check_all.ps1
+scripts/install-governance.ps1
+scripts/install-manifest.txt
+.cursor/rules/
+.cursor/skills/

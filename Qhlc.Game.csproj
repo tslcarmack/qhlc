@@ -3,7 +3,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Qhlc.Game</RootNamespace>
     <EnableDynamicLoading>true</EnableDynamicLoading>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="GameMain.cs" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="src\Qhlc.Core\Qhlc.Core.csproj" />
     <ProjectReference Include="src\Qhlc.Player\Qhlc.Player.csproj" />
