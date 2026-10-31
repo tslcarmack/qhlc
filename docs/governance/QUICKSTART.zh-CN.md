@@ -9,9 +9,27 @@ replaces: null
 
 ## 克隆模板
 
-1. 克隆本仓库，安装 [.NET 8 SDK](https://dotnet.microsoft.com/download) 与 **Godot 4.7**（与 `Qhlc.Game.csproj` 中 `Godot.NET.Sdk/4.7.2` 一致）。
+1. 克隆本仓库，安装 [.NET 8 SDK](https://dotnet.microsoft.com/download) 与 **Godot 4.7 .NET 版**（见下方「C# 与 .NET 版 Godot」）。
 2. 运行 `dotnet build qhlc.sln`。
-3. 用 Godot 打开 `project.godot`。
+3. 用 **.NET 版** Godot 打开 `project.godot`（首次打开可在编辑器中执行「构建」/ Build 项目）。
+
+### C# 与 .NET 版 Godot
+
+本仓库根目录有 `Qhlc.Game.csproj`，**必须使用带 C#/.NET 模块的 Godot**，不能使用仅 GDScript 的标准版。
+
+| 现象 | 原因 |
+|------|------|
+| 警告：「该项目使用 C#，但 Godot 的这个版本没有 Mono 模块」 | 当前 exe 是 **标准版** Godot，不含 .NET |
+
+**处理步骤：**
+
+1. 打开 [Godot 下载页](https://godotengine.org/download/windows/)（或你的平台）。
+2. 下载与 **4.7** 同主版本的 **「.NET」** 包（Windows 常见文件名含 `mono` 或 `dotnet`，例如 `Godot_v4.7.x_mono_win64.zip` / `…-net_…`）。
+3. 解压后用其中的 Godot 可执行文件打开本项目的 `project.godot`。
+4. 确认本机已装 **.NET 8 SDK**（`dotnet --version` 显示 8.x）。
+5. 编辑器菜单 **项目 → 工具 → C#**（或顶部 **Build**）构建一次；也可在仓库根目录执行 `dotnet build qhlc.sln`。
+
+标准版 Godot 可继续用于纯 GDScript 项目；**本模板请固定使用 .NET 版 4.7**。
 
 `global.json` 仅使用 `rollForward: latestFeature`，不锁定具体 SDK 补丁号；需 **.NET 8** 或更高 feature  band。
 
