@@ -16,6 +16,10 @@ dotnet build qhlc.sln
 ./scripts/check_all.ps1
 ```
 
+## 资源目录 `assets/`
+
+美术、音频等大文件放在 `assets/`，**已在 `.gitignore` 中排除**（仅保留 `assets/.gitkeep` 占位）。团队请用网盘、对象存储或 Git LFS 等单独同步资源。
+
 ## 文档
 
 - 设计规格：`docs/superpowers/specs/2026-10-31-ai-governance-starter-design.md`
