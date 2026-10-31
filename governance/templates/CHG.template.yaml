@@ -1,0 +1,24 @@
+id: CHG-0000
+title: （简体中文标题）
+requirements: []
+scope: []
+impact:
+  modules: []
+  apis: []
+  data_migration: false
+  manual_review: []
+acceptance: []
+verification:
+  tests: []
+  checks:
+    - architecture
+    - contracts
+    - doc-language
+documentation: []
+recovery:
+  rollback: code_only
+  notes: ""
+approvals:
+  implementer: self
+  reviewer: optional
+  merged_by: self

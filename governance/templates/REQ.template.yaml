@@ -1,0 +1,10 @@
+id: REQ-0000
+title: （简体中文标题）
+module: MOD-CORE
+status: draft
+acceptance:
+  - （可验证条目）
+implements:
+  apis: []
+  tests: []
+related_adrs: []

@@ -1,0 +1,17 @@
+id: API-0001
+title: 存档快照 DTO
+owner_module: MOD-SAVE
+version: 1.0.0
+consumers:
+  - MOD-UI
+  - MOD-PLAYER
+schema:
+  type: object
+  required:
+    - saveVersion
+    - playerId
+  properties:
+    saveVersion:
+      type: integer
+    playerId:
+      type: string

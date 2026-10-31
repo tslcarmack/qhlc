@@ -1,0 +1,27 @@
+terms:
+  - concept: player
+    name_zh: 玩家
+    identifier_en: Player
+    forbidden_aliases:
+      - 用户
+      - 角色
+
+  - concept: item
+    name_zh: 物品
+    identifier_en: Item
+    forbidden_aliases:
+      - 道具
+      - 装备
+
+  - concept: quest
+    name_zh: 任务
+    identifier_en: Quest
+    forbidden_aliases:
+      - 使命
+
+  - concept: save
+    name_zh: 存档
+    identifier_en: Save
+    forbidden_aliases:
+      - 保存
+      - 存盘

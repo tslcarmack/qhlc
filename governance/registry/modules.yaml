@@ -1,0 +1,120 @@
+modules:
+  - id: MOD-CORE
+    name: core
+    assembly: Qhlc.Core
+    description_zh: 启动、服务定位、Godot 适配与跨模块基础设施
+    public_namespaces:
+      - Qhlc.Core.Public
+    depends_on: []
+    scene_roots:
+      - scenes/core/**
+      - src/Qhlc.Core/Godot/**
+    owner: self
+    scripts_allowed: true
+
+  - id: MOD-PLAYER
+    name: player
+    assembly: Qhlc.Player
+    description_zh: 玩家实体、输入、移动与属性
+    public_namespaces:
+      - Qhlc.Player.Public
+    depends_on:
+      - MOD-CORE
+    scene_roots:
+      - scenes/player/**
+    owner: self
+    scripts_allowed: false
+
+  - id: MOD-COMBAT
+    name: combat
+    assembly: Qhlc.Combat
+    description_zh: 战斗规则、伤害与状态
+    public_namespaces:
+      - Qhlc.Combat.Public
+    depends_on:
+      - MOD-CORE
+      - MOD-PLAYER
+    scene_roots:
+      - scenes/combat/**
+    owner: self
+    scripts_allowed: false
+
+  - id: MOD-INVENTORY
+    name: inventory
+    assembly: Qhlc.Inventory
+    description_zh: 物品、装备与背包
+    public_namespaces:
+      - Qhlc.Inventory.Public
+    depends_on:
+      - MOD-CORE
+      - MOD-PLAYER
+    scene_roots:
+      - scenes/inventory/**
+    owner: self
+    scripts_allowed: false
+
+  - id: MOD-QUEST
+    name: quest
+    assembly: Qhlc.Quest
+    description_zh: 任务状态机与目标
+    public_namespaces:
+      - Qhlc.Quest.Public
+    depends_on:
+      - MOD-CORE
+    scene_roots:
+      - scenes/quest/**
+    owner: self
+    scripts_allowed: false
+
+  - id: MOD-DIALOGUE
+    name: dialogue
+    assembly: Qhlc.Dialogue
+    description_zh: 对话树与选项
+    public_namespaces:
+      - Qhlc.Dialogue.Public
+    depends_on:
+      - MOD-CORE
+      - MOD-QUEST
+    scene_roots:
+      - scenes/dialogue/**
+    owner: self
+    scripts_allowed: false
+
+  - id: MOD-WORLD
+    name: world
+    assembly: Qhlc.World
+    description_zh: 场景、地图与交互物
+    public_namespaces:
+      - Qhlc.World.Public
+    depends_on:
+      - MOD-CORE
+    scene_roots:
+      - scenes/world/**
+    owner: self
+    scripts_allowed: false
+
+  - id: MOD-SAVE
+    name: save
+    assembly: Qhlc.Save
+    description_zh: 存档读写与版本迁移入口
+    public_namespaces:
+      - Qhlc.Save.Public
+    depends_on:
+      - MOD-CORE
+    scene_roots:
+      - scenes/save/**
+    owner: self
+    scripts_allowed: false
+
+  - id: MOD-UI
+    name: ui
+    assembly: Qhlc.Ui
+    description_zh: HUD、菜单与展示
+    public_namespaces:
+      - Qhlc.Ui.Public
+    depends_on:
+      - MOD-CORE
+    scene_roots:
+      - scenes/ui/**
+    owner: self
+    scripts_allowed: false

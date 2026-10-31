@@ -1,0 +1,7 @@
+id: API-0000
+title: （简体中文标题）
+owner_module: MOD-CORE
+version: 1.0.0
+consumers: []
+schema:
+  type: object
