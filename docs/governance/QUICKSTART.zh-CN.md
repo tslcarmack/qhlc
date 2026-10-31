@@ -13,13 +13,35 @@ replaces: null
 2. 运行 `dotnet build qhlc.sln`。
 3. 用 Godot 打开 `project.godot`。
 
-## 首个变更（占位）
+`global.json` 仅使用 `rollForward: latestFeature`，不锁定具体 SDK 补丁号；需 **.NET 8** 或更高 feature  band。
 
-1. 复制 `governance/templates/CHG.template.yaml` 为 `governance/trace/changes/CHG-0002.yaml`。
-2. 填写 `requirements`、`scope`、`impact`、`verification.tests`。
-3. 运行 `dotnet run --project tools/Qhlc.Governance -- impact CHG-0002`。
-4. 在任务分支修改代码，运行 `scripts/check_all.ps1`。
-5. 提交 PR，在描述中填写 `CHG-0002`。
+## 示例变更 CHG-0002（已收录）
+
+本仓库包含完整示例：**存档快照 playerId 不可为空**。
+
+| 对象 | 路径 |
+|------|------|
+| 需求 | `governance/trace/requirements/REQ-0002.yaml` |
+| 变更 | `governance/trace/changes/CHG-0002.yaml` |
+| 实现 | `src/Qhlc.Save/Public/SaveSnapshot.cs` → `Create` |
+| 测试 | `TEST-0002`（`CriticalPathTests.cs`） |
+
+### 复现治理流程
+
+```powershell
+dotnet run --project tools/Qhlc.Governance -- impact CHG-0002
+$env:QHLC_ACTIVE_CHG = "CHG-0002"
+./scripts/check_all.ps1
+```
+
+影响分析会列出契约 `API-0001` 的消费者（`MOD-UI`、`MOD-PLAYER`），提醒改 Save 时同步关注展示与玩家模块。
+
+### 自行新建 CHG-0003 时
+
+1. 复制 `governance/templates/CHG.template.yaml`。
+2. 新建 REQ（或使用已有 REQ）。
+3. 为测试添加 `[Trait("TraceId", "TEST-xxxx")]` 并写入 CHG 的 `verification.tests`。
+4. 设置 `QHLC_ACTIVE_CHG` 后运行 `check_all.ps1`。
 
 ## 叠加到已有项目
 
@@ -29,4 +51,4 @@ replaces: null
 
 ## 环境变量
 
-- `QHLC_ACTIVE_CHG`：`check all` 时校验的变更单，默认 `CHG-0001`。
+- `QHLC_ACTIVE_CHG`：`check all` 时校验的变更单，默认 `CHG-0001`（起步包元变更）；功能变更请设为当前 CHG。

@@ -1,0 +1,32 @@
+id: CHG-0002
+title: 存档快照增加 playerId 校验
+requirements:
+  - REQ-0002
+scope:
+  - save
+impact:
+  modules:
+    - MOD-SAVE
+  apis:
+    - API-0001
+  data_migration: false
+  manual_review: []
+acceptance:
+  - SaveSnapshot.Create 拒绝空 playerId
+  - TEST-0002 通过
+verification:
+  tests:
+    - TEST-0002
+  checks:
+    - architecture
+    - contracts
+    - doc-language
+documentation:
+  - docs/governance/QUICKSTART.zh-CN.md
+recovery:
+  rollback: code_only
+  notes: 仅新增工厂方法，不改变已有属性含义
+approvals:
+  implementer: self
+  reviewer: optional
+  merged_by: self

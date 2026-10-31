@@ -17,4 +17,13 @@ public class CriticalPathTests
         Assert.Equal(1, restored.SaveVersion);
         Assert.Equal("player-1", restored.PlayerId);
     }
+
+    [Trait("TraceId", "TEST-0002")]
+    [Fact]
+    public void SaveSnapshot_Create_rejects_empty_playerId()
+    {
+        Assert.Throws<ArgumentException>(() => SaveSnapshot.Create(1, "  "));
+        var snapshot = SaveSnapshot.Create(1, "player-1");
+        Assert.Equal("player-1", snapshot.PlayerId);
+    }
 }

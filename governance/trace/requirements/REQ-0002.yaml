@@ -1,0 +1,13 @@
+id: REQ-0002
+title: 存档快照玩家标识不可为空
+module: MOD-SAVE
+status: active
+acceptance:
+  - playerId 为空或空白时创建快照失败
+  - 合法 playerId 可创建并序列化
+implements:
+  apis:
+    - API-0001
+  tests:
+    - TEST-0002
+related_adrs: []
