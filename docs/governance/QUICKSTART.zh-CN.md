@@ -9,7 +9,7 @@ replaces: null
 
 ## 克隆模板
 
-1. 克隆本仓库，安装 [.NET 8 SDK](https://dotnet.microsoft.com/download) 与 Godot 4.3（与 `Qhlc.Game.csproj` 中 SDK 版本一致）。
+1. 克隆本仓库，安装 [.NET 8 SDK](https://dotnet.microsoft.com/download) 与 **Godot 4.7**（与 `Qhlc.Game.csproj` 中 `Godot.NET.Sdk/4.7.2` 一致）。
 2. 运行 `dotnet build qhlc.sln`。
 3. 用 Godot 打开 `project.godot`。
 

@@ -1,0 +1,33 @@
+id: CHG-0003
+title: 引擎版本对齐 Godot 4.7
+requirements: []
+scope:
+  - core
+  - governance
+impact:
+  modules:
+    - MOD-CORE
+  apis: []
+  data_migration: false
+  manual_review: []
+acceptance:
+  - Qhlc.Game.csproj 使用 Godot.NET.Sdk 4.7.2
+  - project.godot features 含 4.7
+  - dotnet build 通过
+verification:
+  tests:
+    - TEST-0001
+  checks:
+    - architecture
+    - contracts
+    - doc-language
+documentation:
+  - README.md
+  - docs/governance/QUICKSTART.zh-CN.md
+recovery:
+  rollback: code_only
+  notes: 若本地 Godot 编辑器小版本不同，可改用同主版本的 Sdk 补丁号
+approvals:
+  implementer: self
+  reviewer: optional
+  merged_by: self
