@@ -1,0 +1,18 @@
+<Project Sdk="Godot.NET.Sdk/4.3.0">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Qhlc.Game</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="src\Qhlc.Core\Qhlc.Core.csproj" />
+    <ProjectReference Include="src\Qhlc.Player\Qhlc.Player.csproj" />
+    <ProjectReference Include="src\Qhlc.Combat\Qhlc.Combat.csproj" />
+    <ProjectReference Include="src\Qhlc.Inventory\Qhlc.Inventory.csproj" />
+    <ProjectReference Include="src\Qhlc.Quest\Qhlc.Quest.csproj" />
+    <ProjectReference Include="src\Qhlc.Dialogue\Qhlc.Dialogue.csproj" />
+    <ProjectReference Include="src\Qhlc.World\Qhlc.World.csproj" />
+    <ProjectReference Include="src\Qhlc.Save\Qhlc.Save.csproj" />
+    <ProjectReference Include="src\Qhlc.Ui\Qhlc.Ui.csproj" />
+  </ItemGroup>
+</Project>
