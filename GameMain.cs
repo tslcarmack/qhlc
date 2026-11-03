@@ -1,7 +1,170 @@
+using System;
+using System.Linq;
 using Godot;
+using Qhlc.Core.Nts;
+using Qhlc.Core.Public;
 
 namespace Qhlc.Game;
 
+public enum SliceGameState
+{
+    Boot,
+    Resolving,
+    Login,
+    WorldRoam,
+    Battle,
+}
+
 public partial class GameMain : Node2D
 {
+    private const string LoginScenePath = "res://scenes/ui/Login.tscn";
+    private const string WorldScenePath = "res://scenes/world/WorldMap.tscn";
+    private const string BattleScenePath = "res://scenes/combat/Battle.tscn";
+
+    private Node? _stateRoot;
+    private SliceGameState _state = SliceGameState.Boot;
+
+    public string AssetsRoot { get; private set; } = "";
+    public ResolvedContent? ResolvedContent { get; private set; }
+
+    public override void _Ready() => ChangeState(SliceGameState.Boot);
+
+    public void EnterBattle() => ChangeState(SliceGameState.Battle);
+
+    public void ReturnToWorld(bool won)
+    {
+        GD.Print($"GameMain: battle ended won={won}");
+        ChangeState(SliceGameState.WorldRoam);
+    }
+
+    public void ChangeState(SliceGameState next)
+    {
+        _state = next;
+        ClearStateRoot();
+
+        switch (next)
+        {
+            case SliceGameState.Boot:
+                RunBoot();
+                break;
+            case SliceGameState.Resolving:
+                RunResolving();
+                break;
+            case SliceGameState.Login:
+                MountLogin();
+                break;
+            case SliceGameState.WorldRoam:
+                MountPackedScene(WorldScenePath);
+                break;
+            case SliceGameState.Battle:
+                MountPackedScene(BattleScenePath);
+                break;
+        }
+    }
+
+    private void RunBoot()
+    {
+        AssetsRoot = NtsPaths.ResolveAssetsRoot();
+        if (!TryValidateBootAssets(AssetsRoot, out var message))
+        {
+            ShowFullscreenMessage(message);
+            return;
+        }
+
+        ChangeState(SliceGameState.Resolving);
+    }
+
+    private void RunResolving()
+    {
+        ShowFullscreenMessage("正在解析资源…");
+
+        try
+        {
+            ResolvedContent = ContentResolver.Resolve(AssetsRoot);
+            PrintResolvedContent(ResolvedContent);
+        }
+        catch (Exception ex)
+        {
+            ShowFullscreenMessage($"资源解析失败：{ex.Message}");
+            return;
+        }
+
+        ChangeState(SliceGameState.Login);
+    }
+
+    private void MountLogin()
+    {
+        var packed = GD.Load<PackedScene>(LoginScenePath);
+        var login = packed.Instantiate<LoginController>();
+        login.AssetsRoot = AssetsRoot;
+        login.EnterGame += () => ChangeState(SliceGameState.WorldRoam);
+        AttachStateRoot(login);
+    }
+
+    private void MountPackedScene(string path)
+    {
+        var packed = GD.Load<PackedScene>(path);
+        AttachStateRoot(packed.Instantiate());
+    }
+
+    private static bool TryValidateBootAssets(string assetsRoot, out string message)
+    {
+        var dataDir = NtsPaths.DataDirectory(assetsRoot);
+        var itemDat = System.IO.Path.Combine(dataDir, "Item.Dat");
+        var groundMmg = System.IO.Path.Combine(dataDir, "Ground.MMG");
+
+        if (!System.IO.File.Exists(itemDat) || !System.IO.File.Exists(groundMmg))
+        {
+            message = "缺少必要数据文件：assets/data/Item.Dat 或 Ground.MMG。";
+            return false;
+        }
+
+        message = "";
+        return true;
+    }
+
+    private void PrintResolvedContent(ResolvedContent content)
+    {
+        var allies = string.Join(",", content.AllyNpcIds);
+        var enemies = string.Join(",", content.EnemyNpcIds);
+        var blocks = string.Join(
+            ",",
+            content.NpcIdToBlockId.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key}->{kv.Value:D4}"));
+
+        GD.Print(
+            $"ContentResolver: Scene={content.SceneName} AreaId={content.AreaId} allies=[{allies}] enemies=[{enemies}] blocks=[{blocks}]");
+
+        if (ContentResolver.LastResolveWarning is { } warning)
+            GD.Print(warning);
+    }
+
+    private void ShowFullscreenMessage(string text)
+    {
+        var layer = new CanvasLayer();
+        var label = new Label
+        {
+            Text = text,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        layer.AddChild(label);
+        AttachStateRoot(layer);
+    }
+
+    private void AttachStateRoot(Node node)
+    {
+        _stateRoot = node;
+        AddChild(node);
+    }
+
+    private void ClearStateRoot()
+    {
+        if (_stateRoot is null)
+            return;
+
+        _stateRoot.QueueFree();
+        _stateRoot = null;
+    }
 }
