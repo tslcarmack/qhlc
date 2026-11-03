@@ -54,7 +54,7 @@ public partial class GameMain : Node2D
                 MountLogin();
                 break;
             case SliceGameState.WorldRoam:
-                MountPackedScene(WorldScenePath);
+                MountWorld();
                 break;
             case SliceGameState.Battle:
                 MountPackedScene(BattleScenePath);
@@ -99,6 +99,21 @@ public partial class GameMain : Node2D
         login.AssetsRoot = AssetsRoot;
         login.EnterGame += () => ChangeState(SliceGameState.WorldRoam);
         AttachStateRoot(login);
+    }
+
+    private void MountWorld()
+    {
+        if (ResolvedContent is null)
+        {
+            ShowFullscreenMessage("资源尚未解析，无法进入地图。");
+            return;
+        }
+
+        var packed = GD.Load<PackedScene>(WorldScenePath);
+        var world = packed.Instantiate<WorldMapController>();
+        world.AssetsRoot = AssetsRoot;
+        world.ResolvedContent = ResolvedContent;
+        AttachStateRoot(world);
     }
 
     private void MountPackedScene(string path)
