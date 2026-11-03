@@ -1,0 +1,16 @@
+id: REQ-0003
+title: NTS 资源垂直切片可玩闭环
+module: MOD-CORE
+status: active
+acceptance:
+  - 冷启动可进入登录壳并进入自动解析出的地图
+  - 地图上可移动且不可穿墙
+  - 接触敌人可进入小队回合战并分出胜负后回到地图
+  - 伤害结算标记为 reference，非宣称原版公式
+  - scripts/check_all.ps1 通过
+implements:
+  apis: []
+  tests:
+    - TEST-0003
+    - TEST-0004
+related_adrs: []

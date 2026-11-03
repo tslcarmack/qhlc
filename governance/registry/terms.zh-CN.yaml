@@ -25,3 +25,19 @@ terms:
     forbidden_aliases:
       - 保存
       - 存盘
+
+  - concept: nts_asset_runtime
+    name_zh: NTS资源运行时
+    identifier_en: NtsAssetRuntime
+    forbidden_aliases:
+      - 资源烘焙器
+  - concept: content_resolver
+    name_zh: 内容解析器
+    identifier_en: ContentResolver
+    forbidden_aliases:
+      - 关卡选择器
+  - concept: reference_damage
+    name_zh: 参考伤害公式
+    identifier_en: ReferenceFormula
+    forbidden_aliases:
+      - 原版伤害公式

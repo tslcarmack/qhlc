@@ -1,0 +1,42 @@
+id: CHG-0004
+title: 实现 NTS 垂直切片（登录壳-走图-小队战）
+requirements:
+  - REQ-0003
+scope:
+  - core
+  - player
+  - combat
+  - world
+  - ui
+  - tests
+impact:
+  modules:
+    - MOD-CORE
+    - MOD-PLAYER
+    - MOD-COMBAT
+    - MOD-WORLD
+    - MOD-UI
+  apis: []
+  data_migration: false
+  manual_review:
+    - 需在 Godot 编辑器中人工点一遍登录→走图→战斗
+acceptance:
+  - 符合 REQ-0003 全部验收项
+  - ContentResolver 启动日志打印 Scene/Npc/块号
+verification:
+  tests:
+    - TEST-0003
+    - TEST-0004
+  checks:
+    - architecture
+    - contracts
+    - doc-language
+documentation:
+  - docs/superpowers/specs/2026-11-03-nts-vertical-slice-design.md
+recovery:
+  rollback: code_only
+  notes: ""
+approvals:
+  implementer: self
+  reviewer: optional
+  merged_by: self
