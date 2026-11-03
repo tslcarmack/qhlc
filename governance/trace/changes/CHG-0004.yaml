@@ -19,7 +19,8 @@ impact:
   apis: []
   data_migration: false
   manual_review:
-    - 需在 Godot 编辑器中人工点一遍登录→走图→战斗
+    - description: 需在 Godot 编辑器中人工点一遍登录→走图→战斗
+      confirmed: false
 acceptance:
   - 符合 REQ-0003 全部验收项
   - ContentResolver 启动日志打印 Scene/Npc/块号

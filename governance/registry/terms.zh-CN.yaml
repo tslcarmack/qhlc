@@ -31,11 +31,13 @@ terms:
     identifier_en: NtsAssetRuntime
     forbidden_aliases:
       - 资源烘焙器
+
   - concept: content_resolver
     name_zh: 内容解析器
     identifier_en: ContentResolver
     forbidden_aliases:
       - 关卡选择器
+
   - concept: reference_damage
     name_zh: 参考伤害公式
     identifier_en: ReferenceFormula
