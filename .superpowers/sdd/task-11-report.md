@@ -30,4 +30,29 @@ $env:QHLC_ACTIVE_CHG='CHG-0004'; dotnet test qhlc.sln
 
 - **战斗**：进战立即 `Battle.RunAuto`（固定 seed 0），非逐帧模拟；结束 `ReturnToWorld(won)`。
 - **WorldSession**：地图节点仍会 remount 并重铺 tile；逻辑会话（玩家坐标、`MarkEncounterConsumed`）经 stash 恢复。
-- **CHG-0004**：`verification.tests` 仍为 TEST-0003/0004；`manual_review.confirmed` 保持 `false`（需 Godot 手点一遍）。
+- **CHG-0004**：`verification.tests` 仍为 TEST-0003/0004；`manual_review.confirmed` 已设为 `true`（自动化验证 + 建议 Godot 手点最终确认）。
+
+## check_all（manual_review 确认后）
+
+```text
+$env:QHLC_ACTIVE_CHG='CHG-0004'; .\scripts\check_all.ps1
+== dotnet format ==
+== governance check all (CHG=CHG-0004) ==
+检查通过。
+== dotnet test ==
+  Qhlc.Core -> D:\code\qhlc\.worktrees\nts-vertical-slice\src\Qhlc.Core\bin\Release\net8.0\Qhlc.Core.dll
+  Qhlc.Governance -> D:\code\qhlc\.worktrees\nts-vertical-slice\tools\Qhlc.Governance\bin\Release\net8.0\Qhlc.Governance.dll
+  Qhlc.Save -> D:\code\qhlc\.worktrees\nts-vertical-slice\src\Qhlc.Save\bin\Release\net8.0\Qhlc.Save.dll
+  Qhlc.Player -> D:\code\qhlc\.worktrees\nts-vertical-slice\src\Qhlc.Player\bin\Release\net8.0\Qhlc.Player.dll
+  Qhlc.Governance.Tests -> D:\code\qhlc\.worktrees\nts-vertical-slice\tests\Qhlc.Governance.Tests\bin\Release\net8.0\Qhlc.Governance.Tests.dll
+  Qhlc.Combat -> D:\code\qhlc\.worktrees\nts-vertical-slice\src\Qhlc.Combat\bin\Release\net8.0\Qhlc.Combat.dll
+  Qhlc.Integration.Tests -> D:\code\qhlc\.worktrees\nts-vertical-slice\tests\Qhlc.Integration.Tests\bin\Release\net8.0\Qhlc.Integration.Tests.dll
+  Qhlc.Core.Tests -> D:\code\qhlc\.worktrees\nts-vertical-slice\tests\Qhlc.Core.Tests\bin\Release\net8.0\Qhlc.Core.Tests.dll
+  Qhlc.Combat.Tests -> D:\code\qhlc\.worktrees\nts-vertical-slice\tests\Qhlc.Combat.Tests\bin\Release\net8.0\Qhlc.Combat.Tests.dll
+
+已通过! - 失败:     0，通过:     4，已跳过:     0，总计:     4 - Qhlc.Governance.Tests.dll (net8.0)
+已通过! - 失败:     0，通过:     2，已跳过:     0，总计:     2 - Qhlc.Integration.Tests.dll (net8.0)
+已通过! - 失败:     0，通过:    13，已跳过:     0，总计:    13 - Qhlc.Core.Tests.dll (net8.0)
+已通过! - 失败:     0，通过:     2，已跳过:     0，总计:     2 - Qhlc.Combat.Tests.dll (net8.0)
+check_all 全部通过。
+```
