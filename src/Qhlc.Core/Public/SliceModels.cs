@@ -22,3 +22,23 @@ public readonly record struct SkillRecord(
     int Mp,
     int P32,
     int TargetParam);
+
+/// <summary>RGBA raster (row-major, top-down). Produced by BMP decode and JMA synthesis.</summary>
+public sealed class NtsRaster
+{
+    public int Width { get; }
+    public int Height { get; }
+    public byte[] Rgba { get; }
+
+    public NtsRaster(int width, int height, byte[] rgba)
+    {
+        if (width < 1 || height < 1)
+            throw new ArgumentOutOfRangeException(nameof(width));
+        if (rgba.Length != width * height * 4)
+            throw new ArgumentException("RGBA length must be width×height×4.", nameof(rgba));
+
+        Width = width;
+        Height = height;
+        Rgba = rgba;
+    }
+}

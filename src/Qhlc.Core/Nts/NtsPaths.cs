@@ -25,6 +25,12 @@ public static class NtsPaths
     public static string DataDirectory(string assetsRoot) =>
         Path.Combine(assetsRoot, "assets", "data");
 
+    public static string PicDirectory(string assetsRoot) =>
+        Path.Combine(assetsRoot, "assets", "pic");
+
+    public static string JmaDirectory(string assetsRoot) =>
+        Path.Combine(assetsRoot, "assets", "jma");
+
     private static IEnumerable<string> CandidateStartDirectories()
     {
         yield return AppContext.BaseDirectory;
