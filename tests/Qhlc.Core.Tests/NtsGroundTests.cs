@@ -22,6 +22,8 @@ public class NtsGroundTests
         Assert.True(map.CanWalk(0, 0));
         Assert.False(map.CanWalk(0, 20));
         Assert.False(map.CanWalk(100, 0));
+        Assert.False(map.CanWalk(-1, 0));
+        Assert.False(map.CanWalk(0, -1));
     }
 
     [Fact]

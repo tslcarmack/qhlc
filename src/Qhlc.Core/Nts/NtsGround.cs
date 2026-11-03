@@ -55,6 +55,9 @@ public sealed class NtsMap
 
     public bool CanWalk(int px, int py)
     {
+        if (px < 0 || py < 0)
+            return false;
+
         int gx = px / CellPixels, gy = py / CellPixels;
         if (gx < 0 || gy < 0 || gx >= Gw - 1 || gy >= Gh - 1)
             return false;

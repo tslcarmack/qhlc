@@ -56,3 +56,22 @@ $env:QHLC_ACTIVE_CHG='CHG-0004'; .\scripts\check_all.ps1
 已通过! - 失败:     0，通过:     2，已跳过:     0，总计:     2 - Qhlc.Combat.Tests.dll (net8.0)
 check_all 全部通过。
 ```
+
+## Final branch review fixes（2026-11-03）
+
+**状态：** 完成 — `check_all` 与 `dotnet test qhlc.sln` **22/22** 通过。
+
+| 级别 | 项 | 处理 |
+|---|---|---|
+| Critical | `BattleController` 节点路径与 `Battle.tscn` 不一致；`PopulateUnitRows` 误删标题 | `Hud/Columns/Allies|Enemies/AlliesList|EnemiesList`；仅清空 List 容器 |
+| Important | `CanWalk` 负像素 C# 截断 vs floor | `px<0 \|\| py<0` 先返回 false；测例补 `(-1,0)` / `(0,-1)` |
+| Important | 战斗 UX 缺战后 HP / 行动日志 | `BattleOutcome` 增 `ActionLog` + `Units`；`RunAuto` 后写日志并刷新 HP 行 |
+| Important | 缺确定性物理伤害测 | `ReferenceFormula_physical_non_crit_matches_reference_math`（p32=48→coef=1，rng=0.05→145） |
+
+```text
+$env:QHLC_ACTIVE_CHG='CHG-0004'; dotnet test qhlc.sln
+→ 22 passed (Governance 4, Integration 2, Core 13, Combat 3)
+
+$env:QHLC_ACTIVE_CHG='CHG-0004'; .\scripts\check_all.ps1
+→ check_all 全部通过
+```

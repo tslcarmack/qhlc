@@ -19,8 +19,8 @@ public partial class BattleController : Control
 
     private RichTextLabel? _log;
     private Label? _formulaLabel;
-    private VBoxContainer? _alliesBox;
-    private VBoxContainer? _enemiesBox;
+    private VBoxContainer? _alliesList;
+    private VBoxContainer? _enemiesList;
     private Label? _outcomeLabel;
     private Godot.Timer? _finishTimer;
 
@@ -28,8 +28,8 @@ public partial class BattleController : Control
     {
         _log = GetNode<RichTextLabel>("Hud/Log");
         _formulaLabel = GetNode<Label>("Hud/FormulaSource");
-        _alliesBox = GetNode<VBoxContainer>("Hud/Allies");
-        _enemiesBox = GetNode<VBoxContainer>("Hud/Enemies");
+        _alliesList = GetNode<VBoxContainer>("Hud/Columns/Allies/AlliesList");
+        _enemiesList = GetNode<VBoxContainer>("Hud/Columns/Enemies/EnemiesList");
         _outcomeLabel = GetNode<Label>("Hud/Outcome");
         _finishTimer = GetNode<Godot.Timer>("FinishTimer");
         _finishTimer.Timeout += OnFinishTimeout;
@@ -60,14 +60,22 @@ public partial class BattleController : Control
             return;
         }
 
-        PopulateUnitRows(_alliesBox!, allies);
-        PopulateUnitRows(_enemiesBox!, enemies);
+        PopulateUnitRows(_alliesList!, allies);
+        PopulateUnitRows(_enemiesList!, enemies);
 
         AppendLog($"开战：我方 {allies.Count} vs 敌方 {enemies.Count}（{ReferenceFormula.Source} 参考公式）");
 
         var battle = new Battle(allies, enemies);
         var outcome = battle.RunAuto(new Random(0));
         var won = outcome.WinnerTeam == 0;
+
+        foreach (var line in outcome.ActionLog)
+            AppendLog(line);
+
+        var postAllies = outcome.Units.Where(u => u.Team == 0).OrderBy(u => u.Slot).ToList();
+        var postEnemies = outcome.Units.Where(u => u.Team == 1).OrderBy(u => u.Slot).ToList();
+        PopulateUnitRows(_alliesList!, postAllies);
+        PopulateUnitRows(_enemiesList!, postEnemies);
 
         var winnerText = outcome.WinnerTeam switch
         {

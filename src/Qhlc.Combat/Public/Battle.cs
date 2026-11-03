@@ -1,6 +1,11 @@
 namespace Qhlc.Combat.Public;
 
-public sealed record BattleOutcome(int? WinnerTeam, int Rounds, string? EndReason);
+public sealed record BattleOutcome(
+    int? WinnerTeam,
+    int Rounds,
+    string? EndReason,
+    IReadOnlyList<string> ActionLog,
+    IReadOnlyList<BattleUnit> Units);
 
 /// <summary>精简回合引擎：普攻/技能伤害，无道具/逃跑/捕捉。</summary>
 public sealed class Battle
@@ -14,6 +19,7 @@ public sealed class Battle
     private bool _finished;
     private int? _winner;
     private string? _endReason;
+    private readonly List<string> _actionLog = new();
 
     public Battle(IReadOnlyList<BattleUnit> allies, IReadOnlyList<BattleUnit> enemies)
         : this(CloneParties(allies, enemies), maxRounds: 30)
@@ -47,7 +53,7 @@ public sealed class Battle
         while (!_finished && _round < _maxRounds)
             RunRound(rng);
 
-        return new BattleOutcome(_winner, _round, _endReason);
+        return new BattleOutcome(_winner, _round, _endReason, _actionLog.ToList(), _units.ToList());
     }
 
     private void Start()
@@ -63,6 +69,7 @@ public sealed class Battle
         _finished = false;
         _winner = null;
         _endReason = null;
+        _actionLog.Clear();
         CheckEnd(afterTick: false);
     }
 
@@ -170,6 +177,8 @@ public sealed class Battle
             rngNext);
 
         ApplyDamage(target, damage);
+        _actionLog.Add(
+            $"R{_round} {actor.Name} → {target.Name} -{damage} (HP {target.Hp}/{target.MaxHp})");
         CheckEnd(afterTick: false);
     }
 
