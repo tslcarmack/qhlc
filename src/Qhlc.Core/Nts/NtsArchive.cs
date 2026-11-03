@@ -71,4 +71,7 @@ public sealed class NtsArchive
         Buffer.BlockCopy(_data, e.Offset, payload, 0, e.Size);
         return true;
     }
+
+    public bool ContainsEntry(string entryName) =>
+        !string.IsNullOrEmpty(entryName) && _entries.ContainsKey(entryName);
 }

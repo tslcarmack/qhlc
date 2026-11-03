@@ -23,6 +23,13 @@ public readonly record struct SkillRecord(
     int P32,
     int TargetParam);
 
+public sealed record ResolvedContent(
+    int AreaId,
+    string SceneName,
+    IReadOnlyList<int> AllyNpcIds,
+    IReadOnlyList<int> EnemyNpcIds,
+    IReadOnlyDictionary<int, int> NpcIdToBlockId);
+
 /// <summary>RGBA raster (row-major, top-down). Produced by BMP decode and JMA synthesis.</summary>
 public sealed class NtsRaster
 {
