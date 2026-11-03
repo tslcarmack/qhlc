@@ -198,7 +198,10 @@ public partial class GameMain : Node2D
         if (_stateRoot is null)
             return;
 
-        _stateRoot.QueueFree();
+        // Immediate remove — QueueFree leaves Login Control covering the viewport for a frame
+        // and can leave a grey half-screen under a camera that peeks past the map edge.
+        RemoveChild(_stateRoot);
+        _stateRoot.Free();
         _stateRoot = null;
     }
 }

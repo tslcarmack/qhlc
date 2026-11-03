@@ -75,6 +75,66 @@ public static class NtsJma
         return true;
     }
 
+    /// <summary>
+    /// Frame count for a whitelist block at the given sequence slot (max across body/weapon layers).
+    /// </summary>
+    public static bool TryGetSeqFrameCount(string assetsRoot, int blockId, int seq, out int frameCount)
+    {
+        frameCount = 0;
+        if (!JmaWhitelist.Contains(blockId))
+            return false;
+
+        var jmaDir = NtsPaths.JmaDirectory(assetsRoot);
+        if (!Directory.Exists(jmaDir))
+            return false;
+
+        var family = blockId / 1000;
+        if (family < 1 || family > 999)
+            return false;
+
+        var familyPrefix = family.ToString("D3");
+        var max = 0;
+
+        foreach (var (suffix, partIndex) in BodyLayers)
+        {
+            var blockNum = blockId + partIndex * 100;
+            if (TryGetLayerFrameCount(jmaDir, familyPrefix, suffix, blockNum, seq, out var n))
+                max = Math.Max(max, n);
+        }
+
+        if (TryGetLayerFrameCount(jmaDir, familyPrefix, "w", blockId, seq, out var wn))
+            max = Math.Max(max, wn);
+
+        if (max <= 0)
+            return false;
+
+        frameCount = max;
+        return true;
+    }
+
+    private static bool TryGetLayerFrameCount(
+        string jmaDir,
+        string familyPrefix,
+        string suffix,
+        int blockNum,
+        int seq,
+        out int framesInSeq)
+    {
+        framesInSeq = 0;
+        var path = Path.Combine(jmaDir, $"{familyPrefix}{suffix}.jma");
+        if (!File.Exists(path))
+            return false;
+
+        if (!TryLoadSet(path, out var set))
+            return false;
+
+        var blockName = $"{blockNum}.jmp";
+        if (!set.TryResolveBlockIndex(blockName, out var blockIndex))
+            return false;
+
+        return set.TryGetSeqLength(blockIndex, seq, out framesInSeq) && framesInSeq > 0;
+    }
+
     private static void TryAddLayer(
         string jmaDir,
         string familyPrefix,
@@ -271,6 +331,25 @@ public static class NtsJma
 
             index = -1;
             return false;
+        }
+
+        public bool TryGetSeqLength(int blockIndex, int seq, out int framesInSeq)
+        {
+            framesInSeq = 0;
+            if (blockIndex < 0 || blockIndex >= _blockCount)
+                return false;
+
+            var recOff = HeaderSize + IdxRecordSize * blockIndex;
+            if (recOff + IdxRecordSize > _jxa.Length)
+                return false;
+
+            var rec = _jxa.AsSpan(recOff, IdxRecordSize);
+            var seqCount = rec[79];
+            if (seq < 0 || seq >= seqCount)
+                return false;
+
+            framesInSeq = rec[seq];
+            return framesInSeq > 0;
         }
 
         public bool TryGetFrame(int blockIndex, int seq, int frameIndexInSeq, out JmaFrame frame)
