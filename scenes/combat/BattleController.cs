@@ -31,7 +31,7 @@ public partial class BattleController : Control
         _alliesBox = GetNode<VBoxContainer>("Hud/Allies");
         _enemiesBox = GetNode<VBoxContainer>("Hud/Enemies");
         _outcomeLabel = GetNode<Label>("Hud/Outcome");
-        _finishTimer = GetNode<Timer>("FinishTimer");
+        _finishTimer = GetNode<Godot.Timer>("FinishTimer");
         _finishTimer.Timeout += OnFinishTimeout;
 
         _formulaLabel.Text = $"formula source={ReferenceFormula.Source}";
