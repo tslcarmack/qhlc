@@ -44,9 +44,10 @@ public partial class WorldMapController : Node2D
     private int _animFrameCount = 1;
     private double _animClock;
     private Vector2 _lastMoveDir = new(0, 1);
-    private bool _hasMoveTarget;
-    private int _moveTargetX;
-    private int _moveTargetY;
+    private readonly List<(int X, int Y)> _pathWaypoints = new();
+    private int _pathIndex;
+    private int _lastGoalGx = int.MinValue;
+    private int _lastGoalGy = int.MinValue;
 
     public override void _Ready()
     {
@@ -89,13 +90,11 @@ public partial class WorldMapController : Node2D
         if (_session is null || _playerSprite is null || _battleTriggered)
             return;
 
-        // Hold LMB: continuously chase the cursor (classic mouse walk).
+        // Hold LMB: repath when the cursor moves to another cell.
         if (Input.IsMouseButtonPressed(MouseButton.Left))
             SetMoveTargetFromMouse();
 
-        var moving = false;
-        if (_hasMoveTarget)
-            moving = StepTowardTarget(delta);
+        var moving = StepAlongPath(delta);
 
         if (moving)
             UpdateWalkAnimation(delta);
@@ -113,7 +112,7 @@ public partial class WorldMapController : Node2D
             return;
 
         _battleTriggered = true;
-        _hasMoveTarget = false;
+        ClearPath();
         _session.MarkEncounterConsumed();
         GetParent<GameMain>()?.EnterBattle();
     }
@@ -124,41 +123,70 @@ public partial class WorldMapController : Node2D
             return;
 
         var world = GetGlobalMousePosition();
-        var tx = (int)Math.Round(world.X);
-        var ty = (int)Math.Round(world.Y);
-        // Clamp into map pixel bounds; CanWalk will reject blocked cells while walking.
-        tx = Math.Clamp(tx, 0, Math.Max(0, _session.Map.ImgW - 1));
-        ty = Math.Clamp(ty, 0, Math.Max(0, _session.Map.ImgH - 1));
-        _moveTargetX = tx;
-        _moveTargetY = ty;
-        _hasMoveTarget = true;
+        var tx = Math.Clamp((int)Math.Round(world.X), 0, Math.Max(0, _session.Map.ImgW - 1));
+        var ty = Math.Clamp((int)Math.Round(world.Y), 0, Math.Max(0, _session.Map.ImgH - 1));
+        var (goalGx, goalGy) = NtsMap.PixelToCell(tx, ty);
+        if (!GridAStar.TryFindNearestWalkable(_session.Map, goalGx, goalGy, out goalGx, out goalGy))
+            return;
+
+        if (goalGx == _lastGoalGx && goalGy == _lastGoalGy && _pathWaypoints.Count > 0)
+            return;
+
+        var (startGx, startGy) = NtsMap.PixelToCell(_session.PlayerX, _session.PlayerY);
+        if (!_session.Map.IsCellWalkable(startGx, startGy)
+            && !GridAStar.TryFindNearestWalkable(_session.Map, startGx, startGy, out startGx, out startGy))
+            return;
+
+        if (!GridAStar.TryFindPath(_session.Map, startGx, startGy, goalGx, goalGy, out var cells))
+            return;
+
+        _pathWaypoints.Clear();
+        foreach (var (gx, gy) in cells)
+        {
+            var center = NtsMap.CellCenter(gx, gy);
+            _pathWaypoints.Add(center);
+        }
+
+        // Skip the cell we're already standing in.
+        _pathIndex = 0;
+        while (_pathIndex < _pathWaypoints.Count
+               && Dist2(_session.PlayerX, _session.PlayerY, _pathWaypoints[_pathIndex]) <= 4)
+            _pathIndex++;
+
+        _lastGoalGx = goalGx;
+        _lastGoalGy = goalGy;
     }
 
-    private bool StepTowardTarget(double delta)
+    private bool StepAlongPath(double delta)
     {
-        if (_session is null || !_hasMoveTarget)
+        if (_session is null || _pathIndex >= _pathWaypoints.Count)
             return false;
 
-        var dx = _moveTargetX - _session.PlayerX;
-        var dy = _moveTargetY - _session.PlayerY;
+        var (tx, ty) = _pathWaypoints[_pathIndex];
+        var dx = tx - _session.PlayerX;
+        var dy = ty - _session.PlayerY;
         if (Math.Abs(dx) <= 1 && Math.Abs(dy) <= 1)
         {
-            _hasMoveTarget = false;
-            return false;
+            _pathIndex++;
+            if (_pathIndex >= _pathWaypoints.Count)
+            {
+                ClearPath();
+                return false;
+            }
+
+            (tx, ty) = _pathWaypoints[_pathIndex];
+            dx = tx - _session.PlayerX;
+            dy = ty - _session.PlayerY;
         }
 
         var dir = new Vector2(dx, dy);
         if (dir.LengthSquared() < 0.01f)
-        {
-            _hasMoveTarget = false;
             return false;
-        }
 
         _lastMoveDir = dir.Normalized();
         var step = Math.Max(1, (int)Math.Round(MoveSpeedPixelsPerSecond * (float)delta));
         var stepX = Math.Clamp((int)Math.Round(_lastMoveDir.X * step), -step, step);
         var stepY = Math.Clamp((int)Math.Round(_lastMoveDir.Y * step), -step, step);
-        // Don't overshoot the click point on the final step.
         if (Math.Abs(stepX) > Math.Abs(dx))
             stepX = dx;
         if (Math.Abs(stepY) > Math.Abs(dy))
@@ -172,12 +200,26 @@ public partial class WorldMapController : Node2D
 
         if (nextX == beforeX && nextY == beforeY)
         {
-            // Blocked — stop chasing this target.
-            _hasMoveTarget = false;
+            ClearPath();
             return false;
         }
 
         return true;
+    }
+
+    private void ClearPath()
+    {
+        _pathWaypoints.Clear();
+        _pathIndex = 0;
+        _lastGoalGx = int.MinValue;
+        _lastGoalGy = int.MinValue;
+    }
+
+    private static int Dist2(int x0, int y0, (int X, int Y) p)
+    {
+        var dx = x0 - p.X;
+        var dy = y0 - p.Y;
+        return dx * dx + dy * dy;
     }
 
     private void BuildWorld(ResolvedContent content)

@@ -16,8 +16,8 @@ config/features=PackedStringArray("4.7", "C#")
 
 [display]
 
-window/size/viewport_width=1024
-window/size/viewport_height=768
+window/size/viewport_width=800
+window/size/viewport_height=600
 window/stretch/mode="disabled"
 window/clear_color=Color(0.05, 0.08, 0.1, 1)
 

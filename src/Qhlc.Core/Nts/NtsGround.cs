@@ -59,10 +59,21 @@ public sealed class NtsMap
             return false;
 
         int gx = px / CellPixels, gy = py / CellPixels;
+        return IsCellWalkable(gx, gy);
+    }
+
+    public bool IsCellWalkable(int gx, int gy)
+    {
         if (gx < 0 || gy < 0 || gx >= Gw - 1 || gy >= Gh - 1)
             return false;
         return Grid[gx * Gh + gy] == 0;
     }
+
+    public static (int Gx, int Gy) PixelToCell(int px, int py) =>
+        (px / CellPixels, py / CellPixels);
+
+    public static (int X, int Y) CellCenter(int gx, int gy) =>
+        (gx * CellPixels + CellPixels / 2, gy * CellPixels + CellPixels / 2);
 
     private readonly record struct GroundDirEntry(string Name, int Offset, int Size);
 
