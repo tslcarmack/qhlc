@@ -2,7 +2,7 @@
 
 ## 状态
 
-**完成** — `dotnet test qhlc.sln` 21/21 通过；`check_all.ps1` 在 line-ending 规范化后通过。
+**完成** — `dotnet test qhlc.sln` 21/21 通过；`dotnet format --verify-no-changes` 通过；`check_all` 在 `manual_review` 未确认处停止（按 CHG 刻意保留 `confirmed: false`）。
 
 ## 交付物
 
@@ -17,12 +17,13 @@
 ## 验证
 
 ```text
-$env:QHLC_ACTIVE_CHG='CHG-0004'; dotnet test qhlc.sln
-→ Passed: 21 (Governance 4, Core 13, Integration 2, Combat 2)
-
 $env:QHLC_ACTIVE_CHG='CHG-0004'; .\scripts\check_all.ps1
-→ 首次失败：dotnet format --verify-no-changes ENDOFLINE（仓库 CRLF）
-→ dotnet format qhlc.sln 后重跑 → 全部通过
+→ dotnet format --verify-no-changes: PASS
+→ governance check all: FAIL（manual_review 未确认 — 预期）
+→ dotnet test（脚本未执行到该步）
+
+$env:QHLC_ACTIVE_CHG='CHG-0004'; dotnet test qhlc.sln
+→ Passed: 21
 ```
 
 ## 设计要点
