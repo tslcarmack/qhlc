@@ -3,6 +3,7 @@ using System.Linq;
 using Godot;
 using Qhlc.Core.Nts;
 using Qhlc.Core.Public;
+using Qhlc.World.Public;
 
 namespace Qhlc.Game;
 
@@ -27,9 +28,16 @@ public partial class GameMain : Node2D
     public string AssetsRoot { get; private set; } = "";
     public ResolvedContent? ResolvedContent { get; private set; }
 
+    private WorldSession? _stashedWorldSession;
+
     public override void _Ready() => ChangeState(SliceGameState.Boot);
 
-    public void EnterBattle() => ChangeState(SliceGameState.Battle);
+    public void EnterBattle()
+    {
+        if (_stateRoot is WorldMapController worldMap)
+            _stashedWorldSession = worldMap.ExportSession();
+        ChangeState(SliceGameState.Battle);
+    }
 
     public void ReturnToWorld(bool won)
     {
@@ -57,7 +65,7 @@ public partial class GameMain : Node2D
                 MountWorld();
                 break;
             case SliceGameState.Battle:
-                MountPackedScene(BattleScenePath);
+                MountBattle();
                 break;
         }
     }
@@ -113,13 +121,39 @@ public partial class GameMain : Node2D
         var world = packed.Instantiate<WorldMapController>();
         world.AssetsRoot = AssetsRoot;
         world.ResolvedContent = ResolvedContent;
+        world.RestoredSession = _stashedWorldSession;
+        _stashedWorldSession = null;
         AttachStateRoot(world);
     }
 
-    private void MountPackedScene(string path)
+    private void MountBattle()
     {
-        var packed = GD.Load<PackedScene>(path);
-        AttachStateRoot(packed.Instantiate());
+        if (ResolvedContent is null)
+        {
+            ShowFullscreenMessage("资源尚未解析，无法进入战斗。");
+            return;
+        }
+
+        var packed = GD.Load<PackedScene>(BattleScenePath);
+        var battle = packed.Instantiate<BattleController>();
+        battle.AssetsRoot = AssetsRoot;
+        battle.ResolvedContent = ResolvedContent;
+        AttachStateRoot(battle);
+    }
+
+    private void ShowFullscreenMessage(string text)
+    {
+        var layer = new CanvasLayer();
+        var label = new Label
+        {
+            Text = text,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        layer.AddChild(label);
+        AttachStateRoot(layer);
     }
 
     private static bool TryValidateBootAssets(string assetsRoot, out string message)
@@ -151,21 +185,6 @@ public partial class GameMain : Node2D
 
         if (ContentResolver.LastResolveWarning is { } warning)
             GD.Print(warning);
-    }
-
-    private void ShowFullscreenMessage(string text)
-    {
-        var layer = new CanvasLayer();
-        var label = new Label
-        {
-            Text = text,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-        };
-        label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        layer.AddChild(label);
-        AttachStateRoot(layer);
     }
 
     private void AttachStateRoot(Node node)

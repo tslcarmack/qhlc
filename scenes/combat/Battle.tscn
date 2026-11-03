@@ -1,4 +1,6 @@
-[gd_scene format=3 uid="uid://a6battlestub9"]
+[gd_scene load_steps=2 format=3 uid="uid://a6battlestub9"]
+
+[ext_resource type="Script" path="res://scenes/combat/BattleController.cs" id="1_battle"]
 
 [node name="Battle" type="Control"]
 layout_mode = 3
@@ -7,19 +9,101 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_battle")
 
-[node name="Title" type="Label" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -40.0
-offset_top = -11.0
-offset_right = 40.0
-offset_bottom = 11.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Battle"
+color = Color(0.08, 0.1, 0.14, 1)
+
+[node name="FinishTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="Hud" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelBackground" type="TextureRect" parent="Hud"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="FormulaSource" type="Label" parent="Hud"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 8.0
+offset_bottom = 32.0
+grow_horizontal = 2
+text = "formula source=reference"
+horizontal_alignment = 1
+
+[node name="Columns" type="HBoxContainer" parent="Hud"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 40.0
+offset_right = -24.0
+offset_bottom = -120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 32
+
+[node name="Allies" type="VBoxContainer" parent="Hud/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AlliesTitle" type="Label" parent="Hud/Columns/Allies"]
+layout_mode = 2
+text = "我方"
+
+[node name="Enemies" type="VBoxContainer" parent="Hud/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnemiesTitle" type="Label" parent="Hud/Columns/Enemies"]
+layout_mode = 2
+text = "敌方"
+
+[node name="Log" type="RichTextLabel" parent="Hud"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -112.0
+offset_right = -24.0
+offset_bottom = -48.0
+grow_horizontal = 2
+grow_vertical = 0
+scroll_following = true
+
+[node name="Outcome" type="Label" parent="Hud"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -40.0
+offset_right = -24.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
 horizontal_alignment = 1

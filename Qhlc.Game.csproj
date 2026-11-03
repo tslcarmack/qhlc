@@ -9,6 +9,7 @@
     <Compile Include="GameMain.cs" />
     <Compile Include="scenes\ui\LoginController.cs" />
     <Compile Include="scenes\world\WorldMapController.cs" />
+    <Compile Include="scenes\combat\BattleController.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="src\Qhlc.Core\Qhlc.Core.csproj" />

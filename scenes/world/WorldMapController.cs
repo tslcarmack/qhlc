@@ -21,8 +21,11 @@ public partial class WorldMapController : Node2D
 
     public string AssetsRoot { get; set; } = "";
     public ResolvedContent? ResolvedContent { get; set; }
+    public WorldSession? RestoredSession { get; set; }
 
     private WorldSession? _session;
+
+    public WorldSession? ExportSession() => _session;
     private Sprite2D? _playerSprite;
     private Camera2D? _camera;
     private Node2D? _enemiesRoot;
@@ -92,9 +95,17 @@ public partial class WorldMapController : Node2D
         var mapRoot = GetNode<Node2D>("MapTiles");
         LoadMapTiles(map, mapRoot);
 
-        var spawn = PickPlayerSpawn(map);
-        var enemyPositions = PickEnemyPositions(map, spawn, ContentResolver.EnemyCount);
-        _session = new WorldSession(content, map, spawn.X, spawn.Y, enemyPositions);
+        if (RestoredSession is not null && RestoredSession.Content.AreaId == content.AreaId)
+        {
+            _session = RestoredSession;
+            RestoredSession = null;
+        }
+        else
+        {
+            var spawn = PickPlayerSpawn(map);
+            var enemyPositions = PickEnemyPositions(map, spawn, ContentResolver.EnemyCount);
+            _session = new WorldSession(content, map, spawn.X, spawn.Y, enemyPositions);
+        }
 
         if (!TryLoadActorSprite(content, isPlayer: true, out var playerTex, out var pw, out var ph))
             GD.Print("WorldMap: player sprite synthesis failed; using placeholder.");
@@ -102,7 +113,7 @@ public partial class WorldMapController : Node2D
             ApplySpriteTexture(_playerSprite!, playerTex, pw, ph, isPlayer: true);
 
         SyncPlayerVisual();
-        SpawnEnemies(content, enemyPositions);
+        SpawnEnemies(content, _session.EnemyPositions);
     }
 
     private void LoadMapTiles(NtsMap map, Node2D parent)

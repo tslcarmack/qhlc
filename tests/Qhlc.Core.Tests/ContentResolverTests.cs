@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace Qhlc.Core.Tests;
 
 public class ContentResolverTests
@@ -8,6 +10,7 @@ public class ContentResolverTests
         return File.Exists(Path.Combine(root, "assets", "data", "Npc.Dat")) ? root : null;
     }
 
+    [Trait("TraceId", "TEST-0003")]
     [Fact]
     public void Resolve_returns_3_allies_and_2_enemies()
     {
