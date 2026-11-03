@@ -18,3 +18,6 @@ Thumbs.db
 # 美术/音频等大资源：仅本地，不提交（保留目录占位）
 assets/**
 !assets/.gitkeep
+
+# 本地 git worktree
+.worktrees/
