@@ -44,6 +44,9 @@ public partial class WorldMapController : Node2D
     private int _animFrameCount = 1;
     private double _animClock;
     private Vector2 _lastMoveDir = new(0, 1);
+    private bool _hasMoveTarget;
+    private int _moveTargetX;
+    private int _moveTargetY;
 
     public override void _Ready()
     {
@@ -68,39 +71,36 @@ public partial class WorldMapController : Node2D
         }
     }
 
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (_session is null || _battleTriggered)
+            return;
+
+        // Left click: set walk target in world space (camera-scroll map, 1:1 pixels).
+        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        {
+            SetMoveTargetFromMouse();
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
     public override void _Process(double delta)
     {
         if (_session is null || _playerSprite is null || _battleTriggered)
             return;
 
-        var input = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-        if (input.LengthSquared() < 0.01f)
-            input = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+        // Hold LMB: continuously chase the cursor (classic mouse walk).
+        if (Input.IsMouseButtonPressed(MouseButton.Left))
+            SetMoveTargetFromMouse();
 
-        var moving = input.LengthSquared() >= 0.01f;
+        var moving = false;
+        if (_hasMoveTarget)
+            moving = StepTowardTarget(delta);
+
         if (moving)
-        {
-            _lastMoveDir = input.Normalized();
-            var step = Math.Max(1, (int)Math.Round(MoveSpeedPixelsPerSecond * (float)delta));
-            var dx = (int)Math.Round(_lastMoveDir.X * step);
-            var dy = (int)Math.Round(_lastMoveDir.Y * step);
-            if (dx != 0 || dy != 0)
-            {
-                var (nextX, nextY) = PlayerMover.TryMove(
-                    _session.Map,
-                    _session.PlayerX,
-                    _session.PlayerY,
-                    dx,
-                    dy);
-                _session.PlayerX = nextX;
-                _session.PlayerY = nextY;
-            }
-
             UpdateWalkAnimation(delta);
-        }
         else if (_animFrame != 0)
         {
-            // Idle: hold first frame of current facing seq
             _animFrame = 0;
             _animClock = 0;
             RefreshPlayerFrame();
@@ -113,8 +113,71 @@ public partial class WorldMapController : Node2D
             return;
 
         _battleTriggered = true;
+        _hasMoveTarget = false;
         _session.MarkEncounterConsumed();
         GetParent<GameMain>()?.EnterBattle();
+    }
+
+    private void SetMoveTargetFromMouse()
+    {
+        if (_session is null)
+            return;
+
+        var world = GetGlobalMousePosition();
+        var tx = (int)Math.Round(world.X);
+        var ty = (int)Math.Round(world.Y);
+        // Clamp into map pixel bounds; CanWalk will reject blocked cells while walking.
+        tx = Math.Clamp(tx, 0, Math.Max(0, _session.Map.ImgW - 1));
+        ty = Math.Clamp(ty, 0, Math.Max(0, _session.Map.ImgH - 1));
+        _moveTargetX = tx;
+        _moveTargetY = ty;
+        _hasMoveTarget = true;
+    }
+
+    private bool StepTowardTarget(double delta)
+    {
+        if (_session is null || !_hasMoveTarget)
+            return false;
+
+        var dx = _moveTargetX - _session.PlayerX;
+        var dy = _moveTargetY - _session.PlayerY;
+        if (Math.Abs(dx) <= 1 && Math.Abs(dy) <= 1)
+        {
+            _hasMoveTarget = false;
+            return false;
+        }
+
+        var dir = new Vector2(dx, dy);
+        if (dir.LengthSquared() < 0.01f)
+        {
+            _hasMoveTarget = false;
+            return false;
+        }
+
+        _lastMoveDir = dir.Normalized();
+        var step = Math.Max(1, (int)Math.Round(MoveSpeedPixelsPerSecond * (float)delta));
+        var stepX = Math.Clamp((int)Math.Round(_lastMoveDir.X * step), -step, step);
+        var stepY = Math.Clamp((int)Math.Round(_lastMoveDir.Y * step), -step, step);
+        // Don't overshoot the click point on the final step.
+        if (Math.Abs(stepX) > Math.Abs(dx))
+            stepX = dx;
+        if (Math.Abs(stepY) > Math.Abs(dy))
+            stepY = dy;
+
+        var beforeX = _session.PlayerX;
+        var beforeY = _session.PlayerY;
+        var (nextX, nextY) = PlayerMover.TryMove(_session.Map, beforeX, beforeY, stepX, stepY);
+        _session.PlayerX = nextX;
+        _session.PlayerY = nextY;
+
+        if (nextX == beforeX && nextY == beforeY)
+        {
+            // Blocked — stop chasing this target.
+            _hasMoveTarget = false;
+            return false;
+        }
+
+        return true;
     }
 
     private void BuildWorld(ResolvedContent content)
@@ -155,27 +218,16 @@ public partial class WorldMapController : Node2D
 
     private void ConfigureCamera(NtsMap map)
     {
-        _camera!.LimitEnabled = true;
+        // 1:1 pixels — never scale map/actors. Camera scrolls with the player and
+        // clamps so we don't show empty outside the map when near edges.
+        _camera!.Zoom = Vector2.One;
+        _camera.LimitEnabled = true;
         _camera.LimitLeft = 0;
         _camera.LimitTop = 0;
         _camera.LimitRight = Math.Max(map.ImgW, 1);
         _camera.LimitBottom = Math.Max(map.ImgH, 1);
         _camera.PositionSmoothingEnabled = true;
-        _camera.PositionSmoothingSpeed = 8f;
-
-        // If the map is smaller than the viewport, zoom out so the whole map fits
-        // instead of letterboxing half the screen with clear color.
-        var vp = GetViewport().GetVisibleRect().Size;
-        if (vp.X > 1 && vp.Y > 1 && map.ImgW > 0 && map.ImgH > 0)
-        {
-            var zx = vp.X / map.ImgW;
-            var zy = vp.Y / map.ImgH;
-            var fit = Math.Min(zx, zy);
-            if (fit < 1f)
-                _camera.Zoom = new Vector2(fit, fit);
-            else
-                _camera.Zoom = Vector2.One;
-        }
+        _camera.PositionSmoothingSpeed = 10f;
     }
 
     private void UpdateWalkAnimation(double delta)
