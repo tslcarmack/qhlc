@@ -22,6 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Qhlc.Combat\Qhlc.Combat.csproj" />
+    <ProjectReference Include="..\..\src\Qhlc.Inventory\Qhlc.Inventory.csproj" />
+    <ProjectReference Include="..\..\src\Qhlc.Player\Qhlc.Player.csproj" />
   </ItemGroup>
 
 </Project>

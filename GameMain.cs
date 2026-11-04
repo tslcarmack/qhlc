@@ -138,6 +138,7 @@ public partial class GameMain : Node2D
         var battle = packed.Instantiate<BattleController>();
         battle.AssetsRoot = AssetsRoot;
         battle.ResolvedContent = ResolvedContent;
+        battle.Session = _stashedWorldSession;
         AttachStateRoot(battle);
     }
 

@@ -5,8 +5,9 @@ using System.Linq;
 using Godot;
 using Qhlc.Combat.Public;
 using Qhlc.Core.Nts;
-using Qhlc.Core.Nts.Tables;
 using Qhlc.Core.Public;
+using Qhlc.Player.Public;
+using Qhlc.World.Public;
 
 namespace Qhlc.Game;
 
@@ -16,6 +17,7 @@ public partial class BattleController : Control
 
     public string AssetsRoot { get; set; } = "";
     public ResolvedContent? ResolvedContent { get; set; }
+    public WorldSession? Session { get; set; }
 
     private RichTextLabel? _log;
     private Label? _formulaLabel;
@@ -45,17 +47,27 @@ public partial class BattleController : Control
 
         TryApplyBattleSkin();
 
+        if (Session is null)
+        {
+            AppendLog("缺少 WorldSession，无法从 Party 映射战斗单位。");
+            ScheduleReturn(won: false);
+            return;
+        }
+
         IReadOnlyList<BattleUnit> allies;
         IReadOnlyList<BattleUnit> enemies;
         try
         {
-            var npcById = NpcTable.Load(AssetsRoot).ToDictionary(n => n.Id);
-            allies = BuildParty(ResolvedContent.AllyNpcIds, team: 0, npcById);
-            enemies = BuildParty(ResolvedContent.EnemyNpcIds, team: 1, npcById);
+            allies = BattleUnitMapper.FromParty(Session.Party);
+            enemies = BuildEnemies(Session.MapNpcs);
+            if (allies.Count == 0)
+                throw new InvalidOperationException("我方无存活单位。");
+            if (enemies.Count == 0)
+                throw new InvalidOperationException("无敌方单位。");
         }
         catch (Exception ex)
         {
-            AppendLog($"Npc 加载失败：{ex.Message}");
+            AppendLog($"战斗单位映射失败：{ex.Message}");
             ScheduleReturn(won: false);
             return;
         }
@@ -89,38 +101,18 @@ public partial class BattleController : Control
         ScheduleReturn(won);
     }
 
-    private static List<BattleUnit> BuildParty(
-        IReadOnlyList<int> npcIds,
-        int team,
-        IReadOnlyDictionary<int, NpcRecord> npcById)
+    private static List<BattleUnit> BuildEnemies(IReadOnlyList<NpcCharacter> mapNpcs)
     {
-        var party = new List<BattleUnit>(npcIds.Count);
-        for (var slot = 0; slot < npcIds.Count; slot++)
+        var enemies = new List<BattleUnit>(mapNpcs.Count);
+        for (var slot = 0; slot < mapNpcs.Count; slot++)
         {
-            var id = npcIds[slot];
-            if (!npcById.TryGetValue(id, out var npc))
-                throw new InvalidOperationException($"Npc.Dat 缺少 id={id}");
-
-            var uid = team * 1000 + slot + 1;
-            party.Add(
-                BattleUnit.Create(
-                    uid,
-                    npc.Name,
-                    team: team,
-                    slot: slot,
-                    hp: npc.Hp,
-                    atk: npc.Atk,
-                    def: npc.Def,
-                    intel: npc.Int,
-                    agi: npc.Agi,
-                    maxSp: npc.Sp,
-                    sp: npc.Sp,
-                    leader: team == 0 && slot == 0,
-                    element: 0,
-                    skills: Array.Empty<int>()));
+            var npc = mapNpcs[slot];
+            if (npc.EffectiveStats().Hp <= 0)
+                continue;
+            enemies.Add(BattleUnitMapper.From(npc, team: 1, slot: enemies.Count, leader: false));
         }
 
-        return party;
+        return enemies;
     }
 
     private static void PopulateUnitRows(VBoxContainer box, IReadOnlyList<BattleUnit> units)
