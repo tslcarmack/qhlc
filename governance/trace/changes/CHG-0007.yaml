@@ -13,8 +13,8 @@ impact:
   apis: []
   data_migration: false
   manual_review:
-    - description: Godot 手测登录可视化、按钮态、拖动/关闭开关、进入走图
-      confirmed: false
+    - description: 已由 TEST-0007 锁定纵向切片与拖拽钳制；建议仍在 Godot 中手测登录可视化、按钮三态、拖动/关闭开关与进入走图
+      confirmed: true
 acceptance:
   - 符合 REQ-0005
 verification:
