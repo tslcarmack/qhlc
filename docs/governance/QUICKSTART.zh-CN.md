@@ -49,7 +49,8 @@ replaces: null
 ```powershell
 dotnet run --project tools/Qhlc.Governance -- impact CHG-0002
 $env:QHLC_ACTIVE_CHG = "CHG-0002"
-./scripts/check_all.ps1
+.\scripts\check_all.ps1
+# cmd：scripts\check_all.cmd
 ```
 
 影响分析会列出契约 `API-0001` 的消费者（`MOD-UI`、`MOD-PLAYER`），提醒改 Save 时同步关注展示与玩家模块。

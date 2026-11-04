@@ -13,7 +13,10 @@ Godot 4 2D RPG 模板 + **AI 可治理** 起步包（Superpowers + Cursor）。
 
 ```powershell
 dotnet build qhlc.sln
-./scripts/check_all.ps1
+# PowerShell（在仓库根目录）：
+.\scripts\check_all.ps1
+# 或 cmd：
+scripts\check_all.cmd
 ```
 
 ## 资源目录 `assets/`
