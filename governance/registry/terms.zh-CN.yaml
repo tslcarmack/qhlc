@@ -59,3 +59,13 @@ terms:
     name_zh: 装配槽
     identifier_en: EquipmentSlot
     forbidden_aliases: []
+
+  - concept: skin_window
+    name_zh: 皮肤窗体
+    identifier_en: SkinWindow
+    forbidden_aliases: []
+
+  - concept: skin_button
+    name_zh: 皮肤按钮
+    identifier_en: SkinButton
+    forbidden_aliases: []

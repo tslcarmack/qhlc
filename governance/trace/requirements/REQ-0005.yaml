@@ -1,0 +1,15 @@
+id: REQ-0005
+title: Godot 皮肤 UI 管线与可拖动窗体
+module: MOD-UI
+status: active
+priority: high
+description_zh: >
+  建立 form/btn 皮肤约定与 SkinWindow（拖动/关闭），登录壳在编辑器可视化，
+  进入游戏仍接现有走图流程。
+acceptance:
+  - SkinWindow 支持标题栏拖动、关闭、置顶
+  - btn 纵向状态可应用到 SkinButton
+  - Login 场景编辑器可见底图与进入按钮
+  - 纯逻辑切片/钳制有 TEST-0007
+tests:
+  - TEST-0007
