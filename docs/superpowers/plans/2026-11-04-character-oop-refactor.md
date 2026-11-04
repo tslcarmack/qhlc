@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 引入 `Character` 继承树与逻辑装备（Stub 目录），地图/战斗共用同一人物源，并拆分 `WorldMapController` 上帝对象。
+**Goal:** 按游戏世界 OOP：万物皆对象、行为归对象；引入 `Character` 树与 Stub 装配；`WorldMapController` 仅作协调者；地图/战斗共用人物源。
 
-**Architecture:** 领域对象在 `Qhlc.Inventory` / `Qhlc.Player`（纯 C#）；`Combat` 经 `BattleUnitMapper` 投影；Godot 仅 `ActorView` / 路径驱动 / 瘦 `WorldMapController`。装备目录可整文件替换。
+**Architecture:** 领域对象自治（Inventory/Player 纯 C#）；协作件（Animator、PathDriver）挂在人物侧；Combat 经 Mapper 投影；Godot Presenter + 瘦协调者。禁止再往 WorldMapController 堆实现。
 
 **Tech Stack:** Godot 4.7.2 .NET、C# / .NET 8、xUnit、`Qhlc.Governance` 门禁。
 
@@ -20,6 +20,7 @@
 - `Character` 不得引用 `BattleUnit`（禁止 Player→Combat 依赖）。
 - 完成前跑 `scripts/check_all.ps1`（设置 `QHLC_ACTIVE_CHG`）。
 - Core 不引用 Godot；`NtsRaster` → 纹理转换仅在 `scenes/`。
+- **§1.0 硬约束**：行为归世界对象；`WorldMapController`/`GameMain` 只编排。实现时若发现又在 Controller 写帧循环/Equip/A*，必须下沉后再继续。
 
 ## File Structure（实现后）
 
@@ -607,38 +608,44 @@ git commit -m "feat(combat): map Character effective stats into BattleUnit"
 
 ---
 
-### Task 7: 拆 WorldMap — ActorView / PathDriver / 瘦 Controller
+### Task 7: 拆 WorldMap — 对象自治 + 协调者瘦身
 
 **Files:**
 - Create: `scenes/world/ActorView.cs`
 - Create: `scenes/world/PlayerPathDriver.cs`
-- Modify: `scenes/world/WorldMapController.cs`（删除内嵌动画/大幅缩减）
+- Modify: `scenes/world/WorldMapController.cs`（删除内嵌动画/寻路实现）
 - Modify: `scenes/world/WorldMap.tscn`（按需）
 - Modify: `Qhlc.Game.csproj`（Compile Include 新文件）
 - Modify: `GameMain.cs`（构造 catalog，传入 session 所需）
 
 **Interfaces:**
-- `ActorView`：绑定 `Character` + `ActorAnimator`；`_Process` 里 `anim.Tick` + `TryGetFrame` + 设置 Sprite；Y-sort root 脚位
-- `PlayerPathDriver`：原 `SetMoveTargetFromMouse` / `StepAlongPath`；成功移动时 `player.Behavior=Walk` 并更新 `Facing`；停止 → Idle
-- `WorldMapController`：BuildWorld 调 Factory；生成 ActorView；持有 PathDriver；遇敌 `EnterBattle`
+- `ActorView`：人物 Presenter；不改装备/寻路
+- `PlayerPathDriver`：**玩家侧**协作件（意图→A*→`PlayerMover`→改 `PlayerCharacter` 脚位/Behavior）；由 Controller **转发**点击，不属 World 上帝逻辑
+- `WorldMapController`：**仅** Factory/挂接 View、转发输入、遇敌通知 `GameMain`
 
-- [ ] **Step 1: 把动画/寻路方法移到新类（行为保持），Controller 只编排**
+**完成门禁（代码审阅）：**
+- Controller 内禁止：`_animFrame` / `AdvanceAnimation` / `NtsJma.TrySynthesize` / `GridAStar.TryFindPath` 实现体（最多一行委托调用）
+- 新增走图功能不得向 Controller 加超过「转发」的方法
+
+- [ ] **Step 1: 迁移动画/寻路到人物侧协作件；Controller 只剩编排**
 
 - [ ] **Step 2: 编译**
 
 Run: `dotnet build Qhlc.Game.csproj -c Debug`  
 Expected: 0 errors
 
-- [ ] **Step 3: Godot 手测检查清单（写入 PR/CHG manual_review）**
+- [ ] **Step 3: 审阅 Controller 行数与职责（对照 Spec §1.0 / §5）**
+
+- [ ] **Step 4: Godot 手测**
 
 1. 登录→走图八向与遮挡  
 2. 按住鼠标连续走无跳帧闪脸  
 3. 遇敌进战可结束回图  
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git commit -m "refactor(world): split ActorView and path driver from WorldMapController"
+git commit -m "refactor(world): WorldMap as coordinator; actors own behavior"
 ```
 
 ---
