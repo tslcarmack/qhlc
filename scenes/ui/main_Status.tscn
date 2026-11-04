@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://g7cxmdm4toal"]
+
+[ext_resource type="Script" uid="uid://du8qaux630tfy" path="res://scenes/ui/SkinWindow.cs" id="1_u05an"]
+[ext_resource type="Texture2D" uid="uid://w552g7rrqwgm" path="res://assets/menu/skins/white/main_Status_1.bmp" id="2_m8c1e"]
+
+[node name="SkinWindow" type="Control" unique_id=1788433915]
+custom_minimum_size = Vector2(320, 240)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_u05an")
+
+[node name="Background" type="TextureRect" parent="." unique_id=773930945]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_m8c1e")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Content" type="Control" parent="." unique_id=880921089]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitleBarHit" type="Control" parent="." unique_id=302469353]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 28.0
+grow_horizontal = 2
+
+[node name="CloseButton" type="Button" parent="." unique_id=1537101499]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -28.0
+offset_bottom = 28.0
+grow_horizontal = 0
+text = "X"

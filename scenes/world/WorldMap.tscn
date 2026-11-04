@@ -1,18 +1,21 @@
-[gd_scene load_steps=2 format=3 uid="uid://b7worldstub9"]
+[gd_scene format=3 uid="uid://b7worldstuca"]
 
-[ext_resource type="Script" path="res://scenes/world/WorldMapController.cs" id="1_world"]
+[ext_resource type="Script" uid="uid://gw1gl6wjl8au" path="res://scenes/world/WorldMapController.cs" id="1_world"]
+[ext_resource type="PackedScene" uid="uid://d0ii76j0jpsva" path="res://scenes/ui/form_Equip.tscn" id="2_s0ax2"]
 
-[node name="WorldMap" type="Node2D"]
+[node name="WorldMap" type="Node2D" unique_id=1227827275]
 script = ExtResource("1_world")
 
-[node name="MapTiles" type="Node2D" parent="."]
+[node name="MapTiles" type="Node2D" parent="." unique_id=2000747573]
 z_index = -10
 
-[node name="Sorted" type="Node2D" parent="."]
+[node name="Sorted" type="Node2D" parent="." unique_id=1394405108]
 y_sort_enabled = true
 
-[node name="Player" type="Node2D" parent="Sorted"]
+[node name="Player" type="Node2D" parent="Sorted" unique_id=1346121617]
 
-[node name="Sprite" type="Sprite2D" parent="Sorted/Player"]
+[node name="Sprite" type="Sprite2D" parent="Sorted/Player" unique_id=1410900372]
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=383579565]
+
+[node name="SkinWindow" parent="." unique_id=264664411 instance=ExtResource("2_s0ax2")]

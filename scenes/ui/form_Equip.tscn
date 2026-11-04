@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://d0ii76j0jpsva"]
+
+[ext_resource type="Script" uid="uid://du8qaux630tfy" path="res://scenes/ui/SkinWindow.cs" id="1_o2ky3"]
+[ext_resource type="Texture2D" uid="uid://chfhn84nnwg46" path="res://assets/menu/skins/white/form_Equip.bmp" id="2_0ssb2"]
+[ext_resource type="Texture2D" uid="uid://bqaxb70mtavhn" path="res://assets/menu/skins/default/btn_close_s.bmp" id="3_k657n"]
+
+[node name="SkinWindow" type="Control" unique_id=264664411]
+custom_minimum_size = Vector2(120, 140)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 267.0
+offset_bottom = 541.0
+script = ExtResource("1_o2ky3")
+
+[node name="Background" type="TextureRect" parent="." unique_id=967655343]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -39.0
+offset_bottom = 2.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_0ssb2")
+stretch_mode = 2
+
+[node name="Content" type="Control" parent="." unique_id=2084991416]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 28.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TitleBarHit" type="Control" parent="." unique_id=504129985]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 28.0
+grow_horizontal = 2
+
+[node name="CloseButton" type="Button" parent="." unique_id=2026141971]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -69.0
+offset_top = 3.0
+offset_right = -41.0
+offset_bottom = 62.0
+grow_horizontal = 0
+icon = ExtResource("3_k657n")
