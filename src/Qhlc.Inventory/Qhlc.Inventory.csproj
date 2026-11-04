@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Qhlc.Core\Qhlc.Core.csproj" />
-    <ProjectReference Include="..\Qhlc.Player\Qhlc.Player.csproj" />
   </ItemGroup>
 
 </Project>

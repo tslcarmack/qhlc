@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Qhlc.Core\Qhlc.Core.csproj" />
+    <ProjectReference Include="..\Qhlc.Inventory\Qhlc.Inventory.csproj" />
   </ItemGroup>
 
 </Project>

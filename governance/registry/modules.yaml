@@ -20,6 +20,7 @@ modules:
       - Qhlc.Player.Public
     depends_on:
       - MOD-CORE
+      - MOD-INVENTORY
     scene_roots:
       - scenes/player/**
     owner: self
@@ -47,7 +48,6 @@ modules:
       - Qhlc.Inventory.Public
     depends_on:
       - MOD-CORE
-      - MOD-PLAYER
     scene_roots:
       - scenes/inventory/**
     owner: self
@@ -88,6 +88,7 @@ modules:
       - Qhlc.World.Public
     depends_on:
       - MOD-CORE
+      - MOD-PLAYER
     scene_roots:
       - scenes/world/**
     owner: self

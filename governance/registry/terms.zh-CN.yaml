@@ -43,3 +43,19 @@ terms:
     identifier_en: ReferenceFormula
     forbidden_aliases:
       - 原版伤害公式
+
+  - concept: character
+    name_zh: 人物
+    identifier_en: Character
+    forbidden_aliases:
+      - 玩家
+
+  - concept: equipment_item
+    name_zh: 装配物
+    identifier_en: EquipmentItem
+    forbidden_aliases: []
+
+  - concept: equipment_slot
+    name_zh: 装配槽
+    identifier_en: EquipmentSlot
+    forbidden_aliases: []

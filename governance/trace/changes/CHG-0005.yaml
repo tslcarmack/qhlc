@@ -1,0 +1,42 @@
+id: CHG-0005
+title: 实现人物 OOP 重构与 Stub 装配目录
+requirements:
+  - REQ-0004
+scope:
+  - inventory
+  - player
+  - world
+  - combat
+  - tests
+  - governance
+impact:
+  modules:
+    - MOD-INVENTORY
+    - MOD-PLAYER
+    - MOD-WORLD
+    - MOD-COMBAT
+    - MOD-CORE
+  apis: []
+  data_migration: false
+  manual_review:
+    - description: Godot 手测走图换装与进战加成
+      confirmed: false
+acceptance:
+  - 符合 REQ-0004
+verification:
+  tests:
+    - TEST-0005
+  checks:
+    - architecture
+    - contracts
+    - doc-language
+documentation:
+  - docs/superpowers/specs/2026-11-04-character-oop-refactor-design.md
+  - docs/superpowers/plans/2026-11-04-character-oop-refactor.md
+recovery:
+  rollback: code_only
+  notes: ""
+approvals:
+  implementer: self
+  reviewer: optional
+  merged_by: self

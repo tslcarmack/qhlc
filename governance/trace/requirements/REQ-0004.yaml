@@ -1,0 +1,15 @@
+id: REQ-0004
+title: 人物领域模型与装配物 Stub 闭环
+module: MOD-PLAYER
+status: active
+priority: high
+description_zh: >
+  引入 Character 继承树与逻辑装配（Stub 目录），地图与战斗共用人物源，
+  拆分 WorldMapController；装配物数据标明 source stub。
+acceptance:
+  - Character 可 Equip 并改变 EffectiveStats
+  - BattleUnitMapper 投影含加成
+  - 走图 ActorView 使用 Character 外观
+  - WorldMapController 不再内嵌动画状态机
+tests:
+  - TEST-0005
