@@ -8,6 +8,8 @@
   <ItemGroup>
     <Compile Include="GameMain.cs" />
     <Compile Include="scenes\ui\LoginController.cs" />
+    <Compile Include="scenes\ui\SkinWindow.cs" />
+    <Compile Include="scenes\ui\SkinButton.cs" />
     <Compile Include="scenes\world\ActorView.cs" />
     <Compile Include="scenes\world\PlayerPathDriver.cs" />
     <Compile Include="scenes\world\WorldMapController.cs" />
