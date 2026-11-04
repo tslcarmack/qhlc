@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Godot;
 using Qhlc.Core.Nts;
 using Qhlc.Core.Public;
+using Qhlc.Inventory.Public;
 using Qhlc.Player.Public;
 using Qhlc.World.Public;
 
@@ -30,12 +31,16 @@ public partial class WorldMapController : Node2D
 
     public WorldSession? ExportSession() => _session;
 
+    private Node2D? _sortedRoot;
+    private Node2D? _playerRoot;
     private Sprite2D? _playerSprite;
     private Camera2D? _camera;
-    private Node2D? _enemiesRoot;
     private readonly List<Area2D> _enemyAreas = new();
+    private readonly List<Node2D> _enemyRoots = new();
     private int _playerSpriteW;
     private int _playerSpriteH;
+    private int _playerOriginX;
+    private int _playerOriginY;
     private bool _battleTriggered;
 
     private int _playerBlockId;
@@ -43,6 +48,7 @@ public partial class WorldMapController : Node2D
     private int _animFrame;
     private int _animFrameCount = 1;
     private double _animClock;
+    private int _walkFacingSeq = 4; // last walk slot 0–7
     private Vector2 _lastMoveDir = new(0, 1);
     private readonly List<(int X, int Y)> _pathWaypoints = new();
     private int _pathIndex;
@@ -51,9 +57,10 @@ public partial class WorldMapController : Node2D
 
     public override void _Ready()
     {
-        _playerSprite = GetNode<Sprite2D>("Player");
+        _sortedRoot = GetNode<Node2D>("Sorted");
+        _playerRoot = GetNode<Node2D>("Sorted/Player");
+        _playerSprite = GetNode<Sprite2D>("Sorted/Player/Sprite");
         _camera = GetNode<Camera2D>("Camera2D");
-        _enemiesRoot = GetNode<Node2D>("Enemies");
         _camera.MakeCurrent();
 
         if (ResolvedContent is null || string.IsNullOrEmpty(AssetsRoot))
@@ -77,8 +84,9 @@ public partial class WorldMapController : Node2D
         if (_session is null || _battleTriggered)
             return;
 
-        // Left click: set walk target in world space (camera-scroll map, 1:1 pixels).
-        if (@event is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        // Click to walk (LMB or RMB — hold repaths in _Process).
+        if (@event is InputEventMouseButton { Pressed: true } mb
+            && (mb.ButtonIndex == MouseButton.Left || mb.ButtonIndex == MouseButton.Right))
         {
             SetMoveTargetFromMouse();
             GetViewport().SetInputAsHandled();
@@ -90,25 +98,20 @@ public partial class WorldMapController : Node2D
         if (_session is null || _playerSprite is null || _battleTriggered)
             return;
 
-        // Hold LMB: repath when the cursor moves to another cell.
-        if (Input.IsMouseButtonPressed(MouseButton.Left))
+        // Hold mouse: repath only when the cursor enters another cell (SetMoveTarget early-outs).
+        if (Input.IsMouseButtonPressed(MouseButton.Left) || Input.IsMouseButtonPressed(MouseButton.Right))
             SetMoveTargetFromMouse();
 
         var moving = StepAlongPath(delta);
 
         if (moving)
             UpdateWalkAnimation(delta);
-        else if (_animFrame != 0)
-        {
-            _animFrame = 0;
-            _animClock = 0;
-            RefreshPlayerFrame();
-        }
+        else
+            UpdateStandAnimation(delta);
 
         SyncPlayerVisual();
 
-        var playerRect = PlayerHitbox(_session.PlayerX, _session.PlayerY);
-        if (!_session.TryEncounter(playerRect))
+        if (!_session.TryEncounter())
             return;
 
         _battleTriggered = true;
@@ -183,10 +186,10 @@ public partial class WorldMapController : Node2D
         if (dir.LengthSquared() < 0.01f)
             return false;
 
-        _lastMoveDir = dir.Normalized();
+        var aim = dir.Normalized();
         var step = Math.Max(1, (int)Math.Round(MoveSpeedPixelsPerSecond * (float)delta));
-        var stepX = Math.Clamp((int)Math.Round(_lastMoveDir.X * step), -step, step);
-        var stepY = Math.Clamp((int)Math.Round(_lastMoveDir.Y * step), -step, step);
+        var stepX = Math.Clamp((int)Math.Round(aim.X * step), -step, step);
+        var stepY = Math.Clamp((int)Math.Round(aim.Y * step), -step, step);
         if (Math.Abs(stepX) > Math.Abs(dx))
             stepX = dx;
         if (Math.Abs(stepY) > Math.Abs(dy))
@@ -203,6 +206,12 @@ public partial class WorldMapController : Node2D
             ClearPath();
             return false;
         }
+
+        // Face actual displacement (not raw waypoint vector) to avoid octant chatter.
+        var movedX = nextX - beforeX;
+        var movedY = nextY - beforeY;
+        if (movedX != 0 || movedY != 0)
+            _lastMoveDir = new Vector2(movedX, movedY).Normalized();
 
         return true;
     }
@@ -230,6 +239,8 @@ public partial class WorldMapController : Node2D
             child.QueueFree();
 
         LoadMapTiles(map, mapRoot);
+        ClearSortedActors(keepPlayer: true);
+        LoadMapObjects(map);
         ConfigureCamera(map);
 
         if (RestoredSession is not null && RestoredSession.Content.AreaId == content.AreaId)
@@ -241,8 +252,13 @@ public partial class WorldMapController : Node2D
         {
             var spawn = PickPlayerSpawn(map);
             var enemyPositions = PickEnemyPositions(map, spawn, ContentResolver.EnemyCount);
-            _session = new WorldSession(content, map, spawn.X, spawn.Y, enemyPositions);
-            GD.Print($"WorldMap: AreaId={content.AreaId} size={map.ImgW}x{map.ImgH} spawn=({spawn.X},{spawn.Y}) enemies={enemyPositions.Count}");
+            var catalog = new StubEquipCatalog();
+            var party = CharacterFactory.CreateParty(content, catalog);
+            var mapNpcs = CharacterFactory.CreateMapNpcs(content, catalog, enemyPositions);
+            party.Leader.FootX = spawn.X;
+            party.Leader.FootY = spawn.Y;
+            _session = new WorldSession(content, map, party.Leader, party, mapNpcs);
+            GD.Print($"WorldMap: AreaId={content.AreaId} size={map.ImgW}x{map.ImgH} objects={map.Objects.Count} spawn=({spawn.X},{spawn.Y}) enemies={enemyPositions.Count}");
         }
 
         if (content.AllyNpcIds.Count > 0
@@ -251,7 +267,8 @@ public partial class WorldMapController : Node2D
             _playerBlockId = blockId;
         }
 
-        _animSeq = SeqForDirection(_lastMoveDir);
+        _walkFacingSeq = JmaFacing.WalkSeqForDirection(_lastMoveDir.X, _lastMoveDir.Y);
+        _animSeq = JmaFacing.StandSeqForWalkSeq(_walkFacingSeq);
         RefreshAnimFrameCount();
         RefreshPlayerFrame();
         SyncPlayerVisual();
@@ -274,13 +291,35 @@ public partial class WorldMapController : Node2D
 
     private void UpdateWalkAnimation(double delta)
     {
-        var desiredSeq = SeqForDirection(_lastMoveDir);
+        _walkFacingSeq = JmaFacing.StickWalkSeq(_walkFacingSeq, _lastMoveDir.X, _lastMoveDir.Y);
+        AdvanceAnimation(_walkFacingSeq, delta);
+    }
+
+    private void UpdateStandAnimation(double delta)
+    {
+        // Keep last walk facing while idle; do not re-quantize from a stale dir each frame.
+        var desiredSeq = JmaFacing.StandSeqForWalkSeq(_walkFacingSeq);
+        AdvanceAnimation(desiredSeq, delta);
+    }
+
+    private void AdvanceAnimation(int desiredSeq, double delta)
+    {
         if (desiredSeq != _animSeq)
         {
+            var prevWalk = JmaFacing.IsWalkSeq(_animSeq);
+            var nextWalk = JmaFacing.IsWalkSeq(desiredSeq);
             _animSeq = desiredSeq;
-            _animFrame = 0;
-            _animClock = 0;
             RefreshAnimFrameCount();
+
+            // Walk↔stand: restart cycle. Walk facing change: keep phase so the stride continues.
+            if (prevWalk != nextWalk || _animFrameCount <= 1)
+            {
+                _animFrame = 0;
+                _animClock = 0;
+            }
+            else
+                _animFrame %= Math.Max(1, _animFrameCount);
+
             RefreshPlayerFrame();
             return;
         }
@@ -321,31 +360,17 @@ public partial class WorldMapController : Node2D
                 _playerBlockId,
                 _animSeq,
                 _animFrame,
-                out var raster))
+                out var raster,
+                out var originX,
+                out var originY))
         {
-            // Fallback to seq 0 frame 0 if this facing has no frames
-            if (_animSeq != 0
-                && NtsJma.TrySynthesizeFrame(AssetsRoot, _playerBlockId, 0, 0, out raster))
-            {
-                _animSeq = 0;
-                _animFrame = 0;
-                _animFrameCount = 1;
-            }
-            else
-                return;
+            // Keep last good texture — do not snap to seq0 (causes direction flash).
+            return;
         }
 
+        _playerOriginX = originX;
+        _playerOriginY = originY;
         ApplySpriteTexture(_playerSprite, RasterToTexture(raster), raster.Width, raster.Height, isPlayer: true);
-    }
-
-    /// <summary>
-    /// Walk sequences for 002 family are even/odd pairs (tsdocs §05.1). Map 4-way facing to even slots.
-    /// </summary>
-    private static int SeqForDirection(Vector2 dir)
-    {
-        if (Math.Abs(dir.X) > Math.Abs(dir.Y))
-            return dir.X < 0 ? 2 : 4; // left / right
-        return dir.Y < 0 ? 6 : 0; // up / down
     }
 
     private void LoadMapTiles(NtsMap map, Node2D parent)
@@ -375,16 +400,78 @@ public partial class WorldMapController : Node2D
         }
     }
 
+    private void ClearSortedActors(bool keepPlayer)
+    {
+        if (_sortedRoot is null)
+            return;
+
+        foreach (var child in _sortedRoot.GetChildren())
+        {
+            if (keepPlayer && ReferenceEquals(child, _playerRoot))
+                continue;
+            child.QueueFree();
+        }
+
+        _enemyAreas.Clear();
+        _enemyRoots.Clear();
+    }
+
+    /// <summary>
+    /// Meta 段2 overlays share Y-sort with actors so canopy/tree tops occlude correctly (§05.2).
+    /// Sort key = object bottom edge (py + frameH); blit origin stays (px, py).
+    /// </summary>
+    private void LoadMapObjects(NtsMap map)
+    {
+        if (_sortedRoot is null)
+            return;
+
+        var gfx = new NtsMapObjectGfx(AssetsRoot);
+        var loaded = 0;
+        // Child order preserves meta array order for equal-Y ties (§03.6 pit 3).
+        for (var i = 0; i < map.Objects.Count; i++)
+        {
+            var obj = map.Objects[i];
+            if (!gfx.TryLoad(obj.Id, out var raster))
+                continue;
+
+            var root = new Node2D
+            {
+                Name = $"Obj_{obj.Id}_{i}",
+                // Y-sort key = bottom edge of the overlay; blit stays at (px, py).
+                Position = new Vector2(obj.X, obj.Y + raster.Height),
+            };
+            var sprite = new Sprite2D
+            {
+                Centered = false,
+                Position = new Vector2(0, -raster.Height),
+                Texture = RasterToTexture(raster),
+            };
+            root.AddChild(sprite);
+            _sortedRoot.AddChild(root);
+            loaded++;
+        }
+
+        // Player must stay among Sorted children for Y-sort vs overlays.
+        if (_playerRoot is not null && _playerRoot.GetParent() == _sortedRoot)
+            _sortedRoot.MoveChild(_playerRoot, _sortedRoot.GetChildCount() - 1);
+
+        GD.Print($"WorldMap: loaded {loaded}/{map.Objects.Count} map objects");
+    }
+
     private void SpawnEnemies(ResolvedContent content, IReadOnlyList<(int X, int Y)> positions)
     {
-        foreach (var child in _enemiesRoot!.GetChildren())
-            child.QueueFree();
+        foreach (var old in _enemyRoots)
+            old.QueueFree();
+        _enemyRoots.Clear();
         _enemyAreas.Clear();
+
+        if (_sortedRoot is null)
+            return;
 
         for (var i = 0; i < positions.Count; i++)
         {
             var (ex, ey) = positions[i];
-            var enemyRoot = new Node2D();
+            var enemyRoot = new Node2D { Name = $"Enemy_{i}" };
 
             Sprite2D sprite;
             int sw = HitboxPixels, sh = HitboxPixels;
@@ -404,17 +491,20 @@ public partial class WorldMapController : Node2D
                 };
             }
 
-            enemyRoot.Position = FootToSpritePosition(ex, ey, sw, sh);
+            // Root at foot for Y-sort; sprite hung above.
+            enemyRoot.Position = new Vector2(ex, ey);
+            sprite.Position = new Vector2(-sw * 0.5f, -sh);
             var area = new Area2D();
             var shape = new CollisionShape2D
             {
                 Shape = new RectangleShape2D { Size = new Vector2(HitboxPixels, HitboxPixels) },
-                Position = new Vector2(sw * 0.5f, sh - HitboxPixels * 0.5f),
+                Position = new Vector2(0, -HitboxPixels * 0.5f),
             };
             area.AddChild(shape);
             enemyRoot.AddChild(sprite);
             enemyRoot.AddChild(area);
-            _enemiesRoot.AddChild(enemyRoot);
+            _sortedRoot.AddChild(enemyRoot);
+            _enemyRoots.Add(enemyRoot);
             _enemyAreas.Add(area);
         }
     }
@@ -458,26 +548,21 @@ public partial class WorldMapController : Node2D
 
     private void SyncPlayerVisual()
     {
-        if (_session is null || _playerSprite is null)
+        if (_session is null || _playerRoot is null || _playerSprite is null)
             return;
 
-        _playerSprite.Position = FootToSpritePosition(
-            _session.PlayerX,
-            _session.PlayerY,
-            _playerSpriteW,
-            _playerSpriteH);
-        // Camera follows foot (world position), not sprite top-left — keeps character centered
+        // Root Y = foot → participates in Sorted Y-sort with map objects.
+        _playerRoot.Position = new Vector2(_session.PlayerX, _session.PlayerY);
+        // Entity origin is FootOffsetY below the foot (tsdocs §05.1); raster origin is that point.
+        if (_playerSpriteW > 0 && _playerSpriteH > 0)
+        {
+            _playerSprite.Position = new Vector2(
+                -_playerOriginX,
+                FootOffsetY - _playerOriginY);
+        }
+
+        // Camera follows near the torso, not sprite top-left.
         _camera!.Position = new Vector2(_session.PlayerX, _session.PlayerY - FootOffsetY);
-    }
-
-    private static Vector2 FootToSpritePosition(int footX, int footY, int spriteW, int spriteH)
-    {
-        if (spriteW <= 0 || spriteH <= 0)
-            return new Vector2(footX, footY);
-
-        // Entity origin sits FootOffsetY above the foot; raster is composed around that origin.
-        // Place sprite so its bottom-center lines up with the foot pixel.
-        return new Vector2(footX - spriteW * 0.5f, footY - spriteH);
     }
 
     private static (int X, int Y, int W, int H) PlayerHitbox(int footX, int footY) =>

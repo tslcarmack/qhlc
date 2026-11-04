@@ -1,17 +1,35 @@
 using Qhlc.Core.Nts;
 using Qhlc.Core.Public;
+using Qhlc.Player.Public;
 
 namespace Qhlc.World.Public;
 
-/// <summary>Map roam session: collision context, enemy placements, encounter gate.</summary>
+/// <summary>Map roam session: collision context, character party, map NPCs, encounter gate.</summary>
 public sealed class WorldSession
 {
     public const int EnemyHitboxPixels = NtsMap.CellPixels;
 
     public ResolvedContent Content { get; }
     public NtsMap Map { get; }
-    public int PlayerX { get; set; }
-    public int PlayerY { get; set; }
+    public PlayerCharacter Player { get; }
+    public Party Party { get; }
+    public IReadOnlyList<NpcCharacter> MapNpcs { get; }
+
+    /// <summary>Player foot X; mirrors <see cref="Player"/>.</summary>
+    public int PlayerX
+    {
+        get => Player.FootX;
+        set => Player.FootX = value;
+    }
+
+    /// <summary>Player foot Y; mirrors <see cref="Player"/>.</summary>
+    public int PlayerY
+    {
+        get => Player.FootY;
+        set => Player.FootY = value;
+    }
+
+    /// <summary>Map enemy foot positions; mirrors <see cref="MapNpcs"/>.</summary>
     public IReadOnlyList<(int X, int Y)> EnemyPositions { get; }
 
     private bool _encounterConsumed;
@@ -19,15 +37,23 @@ public sealed class WorldSession
     public WorldSession(
         ResolvedContent content,
         NtsMap map,
-        int playerX,
-        int playerY,
-        IReadOnlyList<(int X, int Y)> enemyPositions)
+        PlayerCharacter player,
+        Party party,
+        IReadOnlyList<NpcCharacter> mapNpcs)
     {
         Content = content ?? throw new ArgumentNullException(nameof(content));
         Map = map ?? throw new ArgumentNullException(nameof(map));
-        EnemyPositions = enemyPositions ?? throw new ArgumentNullException(nameof(enemyPositions));
-        PlayerX = playerX;
-        PlayerY = playerY;
+        Player = player ?? throw new ArgumentNullException(nameof(player));
+        Party = party ?? throw new ArgumentNullException(nameof(party));
+        MapNpcs = mapNpcs ?? throw new ArgumentNullException(nameof(mapNpcs));
+        EnemyPositions = mapNpcs.Select(n => (n.FootX, n.FootY)).ToList();
+    }
+
+    /// <summary>Player-centered AABB vs map NPC foot hitboxes (20×20 px).</summary>
+    public bool TryEncounter()
+    {
+        var half = EnemyHitboxPixels / 2;
+        return TryEncounter((Player.FootX - half, Player.FootY - half, EnemyHitboxPixels, EnemyHitboxPixels));
     }
 
     /// <param name="playerRect">Player AABB in map pixels (x, y, width, height).</param>
@@ -36,15 +62,15 @@ public sealed class WorldSession
         if (_encounterConsumed)
             return false;
 
-        foreach (var (ex, ey) in EnemyPositions)
+        foreach (var npc in MapNpcs)
         {
             if (RectsOverlap(
                     playerRect.X,
                     playerRect.Y,
                     playerRect.W,
                     playerRect.H,
-                    ex,
-                    ey,
+                    npc.FootX,
+                    npc.FootY,
                     EnemyHitboxPixels,
                     EnemyHitboxPixels))
                 return true;
