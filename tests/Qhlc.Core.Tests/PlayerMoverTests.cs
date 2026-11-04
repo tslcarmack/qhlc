@@ -33,4 +33,22 @@ public class PlayerMoverTests
         Assert.Equal(20, x);
         Assert.Equal(0, y);
     }
+
+    [Fact]
+    [Trait("TraceId", "TEST-0004")]
+    public void TryMove_diagonal_when_both_axes_and_corner_clear()
+    {
+        // Open 3x3 cells: all walkable.
+        var map = new NtsMap(
+            imgW: 60,
+            imgH: 60,
+            gw: 3,
+            gh: 3,
+            grid: new byte[9],
+            tiles: Array.Empty<NtsMapTile>());
+        var (x, y) = PlayerMover.TryMove(map, 0, 0, 20, 20);
+        Assert.Equal(20, x);
+        Assert.Equal(20, y);
+    }
 }
+

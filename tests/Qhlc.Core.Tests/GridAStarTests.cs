@@ -40,4 +40,21 @@ public class GridAStarTests
         Assert.True(GridAStar.TryFindNearestWalkable(map, 0, 0, out var gx, out var gy));
         Assert.True(map.IsCellWalkable(gx, gy));
     }
+
+    [Fact]
+    [Trait("TraceId", "TEST-0003")]
+    public void FindPath_uses_diagonal_when_open()
+    {
+        var gh = 4;
+        var gw = 4;
+        var grid = new byte[gw * gh];
+        var map = new NtsMap(64, 64, gw, gh, grid, Array.Empty<NtsMapTile>());
+        Assert.True(GridAStar.TryFindPath(map, 0, 0, 2, 2, out var path));
+        Assert.Equal((0, 0), path[0]);
+        Assert.Equal((2, 2), path[^1]);
+        // Open field: one diagonal hop is enough (0,0)→(1,1)→(2,2)
+        Assert.True(path.Count <= 3);
+        Assert.Contains(path, c => c.Gx == 1 && c.Gy == 1);
+    }
 }
+

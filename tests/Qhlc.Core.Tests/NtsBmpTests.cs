@@ -40,6 +40,17 @@ public class NtsBmpTests
     }
 
     [Fact]
+    [Trait("TraceId", "TEST-0003")]
+    public void Decode_pure_green_key_for_map_objects()
+    {
+        var bmp = MinimalBmp2x1();
+        var raster = NtsBmp.Decode(bmp, NtsBmpKey.PureGreen);
+        // Left red stays opaque; right pure green is transparent.
+        Assert.Equal(255, raster.Rgba[3]);
+        Assert.Equal(0, raster.Rgba[7]);
+    }
+
+    [Fact]
     [Trait("TraceId", "TEST-0004")]
     public void Archive_reads_32_byte_directory_entry()
     {
@@ -82,6 +93,25 @@ public class NtsBmpTests
         }
 
         Assert.True(visible > 0);
+    }
+
+    [Fact]
+    [Trait("TraceId", "TEST-0003")]
+    public void TrySynthesizeFrame_seq_canvas_stable_across_frames()
+    {
+        var root = NtsPaths.ResolveAssetsRoot();
+        var probe = Path.Combine(NtsPaths.JmaDirectory(root), "002.jma");
+        if (!File.Exists(probe))
+            return;
+
+        Assert.True(NtsJma.TryGetSeqFrameCount(root, 2000, 0, out var count));
+        Assert.True(count >= 2);
+        Assert.True(NtsJma.TrySynthesizeFrame(root, 2000, 0, 0, out var f0, out var ox0, out var oy0));
+        Assert.True(NtsJma.TrySynthesizeFrame(root, 2000, 0, 1, out var f1, out var ox1, out var oy1));
+        Assert.Equal(f0.Width, f1.Width);
+        Assert.Equal(f0.Height, f1.Height);
+        Assert.Equal(ox0, ox1);
+        Assert.Equal(oy0, oy1);
     }
 
     private static byte[] MinimalBmp2x1(bool blackLeft = false)

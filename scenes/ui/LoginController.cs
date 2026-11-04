@@ -9,7 +9,7 @@ public partial class LoginController : Control
 {
     private static readonly string[] PanelCandidates =
     {
-        "form_NewRole_1.bmp",
+        "STARTUP.bmp",
         "Form_NewRole_3.bmp",
         "Form_changePassWord.bmp",
         "form_deleteRole.bmp",
@@ -33,7 +33,7 @@ public partial class LoginController : Control
 
     private bool TryApplyPanelBackground()
     {
-        var skinDir = Path.Combine(AssetsRoot, "assets", "menu", "skins", "default");
+        var skinDir = Path.Combine(AssetsRoot, "assets", "pic");
         if (!Directory.Exists(skinDir))
             return false;
 
@@ -42,7 +42,7 @@ public partial class LoginController : Control
             var path = Path.Combine(skinDir, name);
             if (!File.Exists(path))
                 continue;
-
+            GD.Print(path);
             try
             {
                 var bytes = File.ReadAllBytes(path);
@@ -58,6 +58,7 @@ public partial class LoginController : Control
                 var background = GetNode<TextureRect>("Background");
                 background.Texture = texture;
                 background.Visible = true;
+                GD.Print("加载成功");
                 return true;
             }
             catch (Exception ex)

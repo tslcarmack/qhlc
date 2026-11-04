@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://a6battlestub9"]
+[gd_scene format=3 uid="uid://6battlestuca"]
 
-[ext_resource type="Script" path="res://scenes/combat/BattleController.cs" id="1_battle"]
+[ext_resource type="Script" uid="uid://q7tn8r4b0pvh" path="res://scenes/combat/BattleController.cs" id="1_battle"]
 
-[node name="Battle" type="Control"]
+[node name="Battle" type="Control" unique_id=912929755]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,7 +11,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_battle")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=580945630]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,10 +20,10 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.08, 0.1, 0.14, 1)
 
-[node name="FinishTimer" type="Timer" parent="."]
+[node name="FinishTimer" type="Timer" parent="." unique_id=301057610]
 one_shot = true
 
-[node name="Hud" type="Control" parent="."]
+[node name="Hud" type="Control" parent="." unique_id=1324327397]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,7 +31,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PanelBackground" type="TextureRect" parent="Hud"]
+[node name="PanelBackground" type="TextureRect" parent="Hud" unique_id=893742945]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -41,7 +41,7 @@ grow_vertical = 2
 expand_mode = 1
 stretch_mode = 6
 
-[node name="FormulaSource" type="Label" parent="Hud"]
+[node name="FormulaSource" type="Label" parent="Hud" unique_id=291385043]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -51,7 +51,7 @@ grow_horizontal = 2
 text = "formula source=reference"
 horizontal_alignment = 1
 
-[node name="Columns" type="HBoxContainer" parent="Hud"]
+[node name="Columns" type="HBoxContainer" parent="Hud" unique_id=1311819111]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -64,29 +64,29 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 32
 
-[node name="Allies" type="VBoxContainer" parent="Hud/Columns"]
+[node name="Allies" type="VBoxContainer" parent="Hud/Columns" unique_id=2107290056]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="AlliesTitle" type="Label" parent="Hud/Columns/Allies"]
+[node name="AlliesTitle" type="Label" parent="Hud/Columns/Allies" unique_id=105668915]
 layout_mode = 2
 text = "我方"
 
-[node name="AlliesList" type="VBoxContainer" parent="Hud/Columns/Allies"]
+[node name="AlliesList" type="VBoxContainer" parent="Hud/Columns/Allies" unique_id=1647611591]
 layout_mode = 2
 
-[node name="Enemies" type="VBoxContainer" parent="Hud/Columns"]
+[node name="Enemies" type="VBoxContainer" parent="Hud/Columns" unique_id=1521366064]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="EnemiesTitle" type="Label" parent="Hud/Columns/Enemies"]
+[node name="EnemiesTitle" type="Label" parent="Hud/Columns/Enemies" unique_id=76807564]
 layout_mode = 2
 text = "敌方"
 
-[node name="EnemiesList" type="VBoxContainer" parent="Hud/Columns/Enemies"]
+[node name="EnemiesList" type="VBoxContainer" parent="Hud/Columns/Enemies" unique_id=795762206]
 layout_mode = 2
 
-[node name="Log" type="RichTextLabel" parent="Hud"]
+[node name="Log" type="RichTextLabel" parent="Hud" unique_id=1319245028]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -100,7 +100,7 @@ grow_horizontal = 2
 grow_vertical = 0
 scroll_following = true
 
-[node name="Outcome" type="Label" parent="Hud"]
+[node name="Outcome" type="Label" parent="Hud" unique_id=1271158306]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0

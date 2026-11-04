@@ -16,6 +16,11 @@ public static class NtsJma
     private const int IdxRecordSize = 80;
     private const int SeqSlots = 79;
 
+    /// <summary>
+    /// Default action stack: parts 0–5 + weapon (tsdocs §03.4 §5.3 verified composite).
+    /// Parts 6–8 (<c>b</c>/<c>k</c>/<c>bh</c>/<c>bc</c>) are optional appearance replacements
+    /// with static slot-0 frames only — never auto-stack them into walk/stand synthesis.
+    /// </summary>
     private static readonly (string Suffix, int PartIndex)[] BodyLayers =
     [
         ("", 0),
@@ -24,22 +29,38 @@ public static class NtsJma
         ("e", 3),
         ("s", 4),
         ("a", 5),
-        ("b", 6),
     ];
 
     private static readonly Dictionary<string, JmaSet> SetCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<(int BlockId, int Seq), SeqCanvas> SeqCanvasCache = new();
 
     /// <summary>
-    /// Synthesize one composited frame for a whitelist block (e.g. 002:2000, seven body layers + weapon).
+    /// Synthesize one composited frame for a whitelist block (e.g. 002:2000, parts 0–5 + weapon).
+    /// Canvas is the union of the whole sequence (§05.1) so frame size/origin stay stable.
     /// </summary>
     public static bool TrySynthesizeFrame(
         string assetsRoot,
         int blockId,
         int seq,
         int frameIndex,
-        out NtsRaster frame)
+        out NtsRaster frame) =>
+        TrySynthesizeFrame(assetsRoot, blockId, seq, frameIndex, out frame, out _, out _);
+
+    /// <summary>
+    /// Same as <see cref="TrySynthesizeFrame(string,int,int,int,out NtsRaster)"/>, also returns
+    /// where the entity origin sits inside the raster (for foot/anchor placement).
+    /// </summary>
+    public static bool TrySynthesizeFrame(
+        string assetsRoot,
+        int blockId,
+        int seq,
+        int frameIndex,
+        out NtsRaster frame,
+        out int originX,
+        out int originY)
     {
         frame = null!;
+        originX = originY = 0;
         if (!JmaWhitelist.Contains(blockId))
             return false;
 
@@ -52,8 +73,10 @@ public static class NtsJma
             return false;
 
         var familyPrefix = family.ToString("D3");
-        var layers = new List<LayerDraw>();
+        if (!TryGetOrBuildSeqCanvas(jmaDir, familyPrefix, blockId, seq, out var canvas))
+            return false;
 
+        var layers = new List<LayerDraw>();
         foreach (var (suffix, partIndex) in BodyLayers)
         {
             var blockNum = blockId + partIndex * 100;
@@ -61,17 +84,18 @@ public static class NtsJma
         }
 
         TryAddLayer(jmaDir, familyPrefix, "w", blockId, seq, frameIndex, layers);
-
         if (layers.Count == 0)
             return false;
 
-        if (!TryComposite(layers, out var raster))
+        if (!TryComposite(layers, canvas, out var raster))
             return false;
 
         if (!RasterHasVisiblePixel(raster))
             return false;
 
         frame = raster;
+        originX = -canvas.MinX;
+        originY = -canvas.MinY;
         return true;
     }
 
@@ -168,31 +192,78 @@ public static class NtsJma
         layers.Add(new LayerDraw(ox, oy, jmaFrame.BitmapWidth, jmaFrame.BitmapHeight, rgba));
     }
 
-    private static bool TryComposite(IReadOnlyList<LayerDraw> layers, out NtsRaster raster)
+    private readonly record struct SeqCanvas(int MinX, int MinY, int Width, int Height);
+
+    private static bool TryGetOrBuildSeqCanvas(
+        string jmaDir,
+        string familyPrefix,
+        int blockId,
+        int seq,
+        out SeqCanvas canvas)
     {
-        raster = null!;
+        var key = (blockId, seq);
+        lock (SeqCanvasCache)
+        {
+            if (SeqCanvasCache.TryGetValue(key, out canvas))
+                return true;
+        }
+
         var minX = int.MaxValue;
         var minY = int.MaxValue;
         var maxR = int.MinValue;
         var maxB = int.MinValue;
+        var any = false;
 
-        foreach (var l in layers)
+        void ExpandLayer(string suffix, int blockNum)
         {
-            minX = Math.Min(minX, l.Ox);
-            minY = Math.Min(minY, l.Oy);
-            maxR = Math.Max(maxR, l.Ox + l.Width);
-            maxB = Math.Max(maxB, l.Oy + l.Height);
+            var path = Path.Combine(jmaDir, $"{familyPrefix}{suffix}.jma");
+            if (!File.Exists(path) || !TryLoadSet(path, out var set))
+                return;
+            var blockName = $"{blockNum}.jmp";
+            if (!set.TryResolveBlockIndex(blockName, out var blockIndex))
+                return;
+            if (!set.TryGetSeqLength(blockIndex, seq, out var n) || n <= 0)
+                return;
+
+            for (var fi = 0; fi < n; fi++)
+            {
+                if (!set.TryGetFrame(blockIndex, seq, fi, out var fr))
+                    continue;
+                if (fr.BitmapWidth <= 0 || fr.BitmapHeight <= 0)
+                    continue;
+                any = true;
+                minX = Math.Min(minX, fr.DrawOffsetX);
+                minY = Math.Min(minY, fr.DrawOffsetY);
+                maxR = Math.Max(maxR, fr.DrawOffsetX + fr.BitmapWidth);
+                maxB = Math.Max(maxB, fr.DrawOffsetY + fr.BitmapHeight);
+            }
         }
 
-        if (minX == int.MaxValue)
-            return false;
+        foreach (var (suffix, partIndex) in BodyLayers)
+            ExpandLayer(suffix, blockId + partIndex * 100);
+        ExpandLayer("w", blockId);
 
-        var outW = Math.Max(1, maxR - minX);
-        var outH = Math.Max(1, maxB - minY);
+        if (!any)
+        {
+            canvas = default;
+            return false;
+        }
+
+        canvas = new SeqCanvas(minX, minY, Math.Max(1, maxR - minX), Math.Max(1, maxB - minY));
+        lock (SeqCanvasCache)
+            SeqCanvasCache[key] = canvas;
+        return true;
+    }
+
+    private static bool TryComposite(IReadOnlyList<LayerDraw> layers, SeqCanvas canvas, out NtsRaster raster)
+    {
+        raster = null!;
+        var outW = canvas.Width;
+        var outH = canvas.Height;
         var buf = new byte[outW * outH * 4];
 
         foreach (var l in layers)
-            Blit(buf, outW, outH, l.Rgba, l.Width, l.Height, l.Ox - minX, l.Oy - minY);
+            Blit(buf, outW, outH, l.Rgba, l.Width, l.Height, l.Ox - canvas.MinX, l.Oy - canvas.MinY);
 
         raster = new NtsRaster(outW, outH, buf);
         return true;

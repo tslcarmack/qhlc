@@ -3,15 +3,26 @@ using Qhlc.Core.Public;
 
 namespace Qhlc.Core.Nts;
 
+public enum NtsBmpKey
+{
+    /// <summary>Pure black → transparent (fx / additive-style assets).</summary>
+    PureBlack = 0,
+    /// <summary>Pure green #00FF00 → transparent (map object overlays, §03.5 §3.5).</summary>
+    PureGreen = 1,
+}
+
 /// <summary>
-/// Windows BMP → RGBA (tsdocs format/bmp.ts). Pure black RGB(0,0,0) → alpha 0.
+/// Windows BMP → RGBA (tsdocs format/bmp.ts).
 /// </summary>
 public static class NtsBmp
 {
     public static bool IsBmp(ReadOnlySpan<byte> data) =>
         data.Length > 54 && data[0] == 0x42 && data[1] == 0x4D;
 
-    public static NtsRaster Decode(ReadOnlySpan<byte> bmp)
+    public static NtsRaster Decode(ReadOnlySpan<byte> bmp) =>
+        Decode(bmp, NtsBmpKey.PureBlack);
+
+    public static NtsRaster Decode(ReadOnlySpan<byte> bmp, NtsBmpKey key)
     {
         if (!IsBmp(bmp))
             throw new InvalidDataException("Not a BMP (missing BM header).");
@@ -103,12 +114,88 @@ public static class NtsBmp
                 rgba[o2] = r;
                 rgba[o2 + 1] = g;
                 rgba[o2 + 2] = b;
-                rgba[o2 + 3] = IsPureBlack(r, g, b) ? (byte)0 : (byte)255;
+                rgba[o2 + 3] = IsKey(r, g, b, key) ? (byte)0 : (byte)255;
             }
         }
 
         return new NtsRaster(width, height, rgba);
     }
 
-    private static bool IsPureBlack(byte r, byte g, byte b) => r == 0 && g == 0 && b == 0;
+    /// <summary>
+    /// Vertical strip first-frame slice (tsdocs §03.5 §5.3 autocorrelation).
+    /// </summary>
+    public static NtsRaster TakeFirstFrame(NtsRaster full)
+    {
+        var frameH = DetectFrameHeight(full);
+        if (frameH >= full.Height)
+            return full;
+
+        var w = full.Width;
+        var rgba = new byte[w * frameH * 4];
+        Buffer.BlockCopy(full.Rgba, 0, rgba, 0, rgba.Length);
+        return new NtsRaster(w, frameH, rgba);
+    }
+
+    /// <summary>
+    /// Detect vertical strip frame height. Returns full height when not a strip.
+    /// </summary>
+    public static int DetectFrameHeight(NtsRaster raster)
+    {
+        var w = raster.Width;
+        var h = raster.Height;
+        if (h < 16 || w < 1)
+            return h;
+
+        var bestP = h;
+        for (var frames = 2; frames <= 64; frames++)
+        {
+            if (h % frames != 0)
+                continue;
+            var p = h / frames;
+            if (p < 8)
+                continue;
+
+            var sP = RowDiff(raster, p);
+            var sHalf = RowDiff(raster, Math.Max(1, p / 2));
+            if (sP <= 0.62 && sP <= 0.50 * sHalf && p < bestP)
+                bestP = p;
+        }
+
+        return bestP;
+    }
+
+    private static double RowDiff(NtsRaster raster, int period)
+    {
+        var w = raster.Width;
+        var h = raster.Height;
+        if (period <= 0 || period >= h)
+            return 1.0;
+
+        var step = Math.Max(1, period / 8);
+        long diffs = 0;
+        long samples = 0;
+        var rgba = raster.Rgba;
+        for (var y = 0; y + period < h; y += step)
+        {
+            var a = y * w * 4;
+            var b = (y + period) * w * 4;
+            for (var x = 0; x < w; x++)
+            {
+                var o = x * 4;
+                diffs += Math.Abs(rgba[a + o] - rgba[b + o])
+                    + Math.Abs(rgba[a + o + 1] - rgba[b + o + 1])
+                    + Math.Abs(rgba[a + o + 2] - rgba[b + o + 2]);
+                samples += 3 * 255;
+            }
+        }
+
+        return samples == 0 ? 1.0 : diffs / (double)samples;
+    }
+
+    private static bool IsKey(byte r, byte g, byte b, NtsBmpKey key) =>
+        key switch
+        {
+            NtsBmpKey.PureGreen => r == 0 && g == 255 && b == 0,
+            _ => r == 0 && g == 0 && b == 0,
+        };
 }

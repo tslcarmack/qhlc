@@ -1,16 +1,24 @@
 namespace Qhlc.Core.Nts;
 
 /// <summary>
-/// 4-connected A* on <see cref="NtsMap"/> walkable cells (column-major grid, 0 = walk).
+/// 8-connected A* on <see cref="NtsMap"/> walkable cells (column-major grid, 0 = walk).
+/// Diagonal steps require both adjacent orthogonal cells walkable (no corner cutting).
 /// </summary>
 public static class GridAStar
 {
-    private static readonly (int Dx, int Dy)[] Neighbors =
+    private const int StraightCost = 10;
+    private const int DiagonalCost = 14;
+
+    private static readonly (int Dx, int Dy, int Cost)[] Neighbors =
     [
-        (0, -1),
-        (0, 1),
-        (-1, 0),
-        (1, 0),
+        (0, -1, StraightCost),
+        (0, 1, StraightCost),
+        (-1, 0, StraightCost),
+        (1, 0, StraightCost),
+        (-1, -1, DiagonalCost),
+        (-1, 1, DiagonalCost),
+        (1, -1, DiagonalCost),
+        (1, 1, DiagonalCost),
     ];
 
     public static bool TryFindPath(
@@ -51,7 +59,7 @@ public static class GridAStar
             }
 
             var currentG = gScore[current];
-            foreach (var (dx, dy) in Neighbors)
+            foreach (var (dx, dy, cost) in Neighbors)
             {
                 var nx = current.Gx + dx;
                 var ny = current.Gy + dy;
@@ -59,7 +67,15 @@ public static class GridAStar
                 if (closed.Contains(key) || !map.IsCellWalkable(nx, ny))
                     continue;
 
-                var tentative = currentG + 1;
+                // No corner cutting on diagonals.
+                if (dx != 0 && dy != 0)
+                {
+                    if (!map.IsCellWalkable(current.Gx + dx, current.Gy)
+                        || !map.IsCellWalkable(current.Gx, current.Gy + dy))
+                        continue;
+                }
+
+                var tentative = currentG + cost;
                 if (gScore.TryGetValue(key, out var known) && tentative >= known)
                     continue;
 
@@ -92,7 +108,7 @@ public static class GridAStar
         while (q.Count > 0)
         {
             var (cx, cy) = q.Dequeue();
-            foreach (var (dx, dy) in Neighbors)
+            foreach (var (dx, dy, _) in Neighbors)
             {
                 var nx = cx + dx;
                 var ny = cy + dy;
@@ -114,8 +130,13 @@ public static class GridAStar
         return false;
     }
 
-    private static int Heuristic(int ax, int ay, int bx, int by) =>
-        Math.Abs(ax - bx) + Math.Abs(ay - by);
+    private static int Heuristic(int ax, int ay, int bx, int by)
+    {
+        var dx = Math.Abs(ax - bx);
+        var dy = Math.Abs(ay - by);
+        // Octile distance matching straight/diagonal costs.
+        return StraightCost * (dx + dy) + (DiagonalCost - 2 * StraightCost) * Math.Min(dx, dy);
+    }
 
     private static void Reconstruct(
         Dictionary<(int, int), (int, int)> cameFrom,

@@ -53,4 +53,22 @@ public class NtsGroundTests
 
         Assert.True(walkable > 0);
     }
+
+    [Fact]
+    [Trait("TraceId", "TEST-0003")]
+    public void LoadFromGround_area10001_parses_meta_objects()
+    {
+        var root = AssetsRoot();
+        if (root is null)
+            return;
+
+        var groundPath = Path.Combine(Qhlc.Core.Nts.NtsPaths.DataDirectory(root), "Ground.MMG");
+        if (!File.Exists(groundPath))
+            return;
+
+        // 10001.map: n2 = 1 (§03.6 / §05.2).
+        var map = Qhlc.Core.Nts.NtsMap.LoadFromGround(root, 10001);
+        Assert.True(map.Objects.Count >= 1);
+        Assert.True(map.Objects[0].Id >= 10000);
+    }
 }

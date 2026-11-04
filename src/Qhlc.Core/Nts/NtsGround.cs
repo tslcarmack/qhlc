@@ -2,6 +2,9 @@ namespace Qhlc.Core.Nts;
 
 public readonly record struct NtsMapTile(int Scene, int X, int Y);
 
+/// <summary>Ground.MMG meta segment-2 pixel object (tsdocs §03.6 / §05.2).</summary>
+public readonly record struct NtsMapObject(int Id, int X, int Y);
+
 /// <summary>
 /// Ground.MMG / .map collision canvas (tsdocs format/ground.ts).
 /// Grid is column-major: <c>grid[x * gh + y]</c>, 0 = walkable.
@@ -17,6 +20,7 @@ public sealed class NtsMap
     public int Gh { get; }
     public byte[] Grid { get; }
     public IReadOnlyList<NtsMapTile> Tiles { get; }
+    public IReadOnlyList<NtsMapObject> Objects { get; }
 
     public NtsMap(
         int imgW,
@@ -24,7 +28,8 @@ public sealed class NtsMap
         int gw,
         int gh,
         byte[] grid,
-        IReadOnlyList<NtsMapTile> tiles)
+        IReadOnlyList<NtsMapTile> tiles,
+        IReadOnlyList<NtsMapObject>? objects = null)
     {
         if (gw < 1 || gh < 1)
             throw new ArgumentOutOfRangeException(nameof(gw), "Grid dimensions must be positive.");
@@ -37,6 +42,7 @@ public sealed class NtsMap
         Gh = gh;
         Grid = grid;
         Tiles = tiles;
+        Objects = objects ?? Array.Empty<NtsMapObject>();
     }
 
     public static NtsMap LoadFromGround(string assetsRoot, int areaId)
@@ -157,6 +163,41 @@ public sealed class NtsMap
             throw new InvalidDataException("Ground.MMG: metadata bounds invalid.");
 
         var grid = buf.Slice(gridOffset, gridBytes).ToArray();
-        return new NtsMap(imgW, imgH, gw, gh, grid, tiles);
+        var objects = ParseMetaObjects(buf.Slice(metaOffset, metaLen));
+        return new NtsMap(imgW, imgH, gw, gh, grid, tiles, objects);
+    }
+
+    /// <summary>
+    /// Meta layout (tsdocs §03.6 §3.4): n1 cells → n2 pixel objects → n3 regions → name → anchor.
+    /// Length identity: metaLen = 28 + 6·n1 + 8·n2 + 9·n3.
+    /// </summary>
+    private static List<NtsMapObject> ParseMetaObjects(ReadOnlySpan<byte> meta)
+    {
+        var objects = new List<NtsMapObject>();
+        if (meta.Length < 4)
+            return objects;
+
+        var n1 = NtsBuf.ReadU16Le(meta, 0);
+        var p = 2 + n1 * 6;
+        if (p + 2 > meta.Length)
+            return objects;
+
+        var n2 = NtsBuf.ReadU16Le(meta, p);
+        p += 2;
+        var need = p + n2 * 8;
+        if (need > meta.Length)
+            return objects;
+
+        // Keep array order — draw order is file order (§03.6 pit 3).
+        for (var i = 0; i < n2; i++)
+        {
+            var q = p + i * 8;
+            var id = (int)NtsBuf.ReadU32Le(meta, q);
+            var px = NtsBuf.ReadU16Le(meta, q + 4);
+            var py = NtsBuf.ReadU16Le(meta, q + 6);
+            objects.Add(new NtsMapObject(id, px, py));
+        }
+
+        return objects;
     }
 }
