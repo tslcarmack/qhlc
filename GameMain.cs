@@ -3,6 +3,7 @@ using System.Linq;
 using Godot;
 using Qhlc.Core.Nts;
 using Qhlc.Core.Public;
+using Qhlc.Inventory.Public;
 using Qhlc.World.Public;
 
 namespace Qhlc.Game;
@@ -27,6 +28,7 @@ public partial class GameMain : Node2D
 
     public string AssetsRoot { get; private set; } = "";
     public ResolvedContent? ResolvedContent { get; private set; }
+    public IEquipCatalog EquipCatalog { get; } = new StubEquipCatalog();
 
     private WorldSession? _stashedWorldSession;
 
@@ -34,7 +36,7 @@ public partial class GameMain : Node2D
 
     public void EnterBattle()
     {
-        if (_stateRoot is WorldMapController worldMap)
+        if (FindStateNode<WorldMapController>() is { } worldMap)
             _stashedWorldSession = worldMap.ExportSession();
         ChangeState(SliceGameState.Battle);
     }
@@ -121,6 +123,7 @@ public partial class GameMain : Node2D
         var world = packed.Instantiate<WorldMapController>();
         world.AssetsRoot = AssetsRoot;
         world.ResolvedContent = ResolvedContent;
+        world.EquipCatalog = EquipCatalog;
         world.RestoredSession = _stashedWorldSession;
         _stashedWorldSession = null;
         AttachStateRoot(world);
@@ -188,8 +191,35 @@ public partial class GameMain : Node2D
             GD.Print(warning);
     }
 
+    private T? FindStateNode<T>() where T : class
+    {
+        if (_stateRoot is T direct)
+            return direct;
+        if (_stateRoot is null)
+            return null;
+        foreach (var child in _stateRoot.GetChildren())
+        {
+            if (child is T match)
+                return match;
+        }
+
+        return null;
+    }
+
     private void AttachStateRoot(Node node)
     {
+        // Control under Node2D does not participate in GUI layout: full-rect anchors stay
+        // 0×0, so Login/Battle backgrounds never appear. Host UI on a CanvasLayer instead.
+        if (node is Control control)
+        {
+            control.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            var layer = new CanvasLayer { Name = "StateUiLayer" };
+            layer.AddChild(control);
+            _stateRoot = layer;
+            AddChild(layer);
+            return;
+        }
+
         _stateRoot = node;
         AddChild(node);
     }
