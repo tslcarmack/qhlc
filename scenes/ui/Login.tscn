@@ -1,6 +1,10 @@
-[gd_scene format=3 uid="uid://c8logioaslice"]
+[gd_scene load_steps=6 format=3 uid="uid://c8logioaslice"]
 
 [ext_resource type="Script" uid="uid://doi8e0u1uukkm" path="res://scenes/ui/LoginController.cs" id="1_login"]
+[ext_resource type="PackedScene" uid="uid://bqskinwindow001" path="res://scenes/ui/SkinWindow.tscn" id="2_skinwindow"]
+[ext_resource type="Texture2D" uid="uid://cgfniwhbfvyyv" path="res://assets/pic/STARTUP.bmp" id="3_startup"]
+[ext_resource type="Script" path="res://scenes/ui/SkinButton.cs" id="4_skinbutton"]
+[ext_resource type="Texture2D" uid="uid://cw47kgsoku7am" path="res://assets/menu/skins/default/btn_001.bmp" id="5_btn_strip"]
 
 [node name="Login" type="Control" unique_id=1048212664]
 layout_mode = 3
@@ -21,23 +25,26 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.12, 0.14, 0.18, 1)
 
-[node name="Background" type="TextureRect" parent="." unique_id=1214343561]
+[node name="LoginShell" parent="." instance=ExtResource("2_skinwindow")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-expand_mode = 1
-stretch_mode = 5
+EnableDrag = false
+EnableClose = false
 
-[node name="EnterButton" type="Button" parent="." unique_id=1772429785]
-layout_mode = 1
-anchors_preset = -1
+[node name="Background" parent="LoginShell" index="0"]
+texture = ExtResource("3_startup")
+
+[node name="EnterButton" type="Button" parent="LoginShell/Content" index="0"]
+layout_mode = 0
 offset_left = 320.0
-offset_top = 420.0
+offset_top = 392.0
 offset_right = 480.0
-offset_bottom = 460.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_bottom = 432.0
 text = "进入游戏"
+script = ExtResource("4_skinbutton")
+StripTexture = ExtResource("5_btn_strip")
+FrameCount = 3
