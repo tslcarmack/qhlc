@@ -63,6 +63,30 @@ public partial class WorldMapController : Node2D
         {
             GD.PrintErr($"WorldMap: build failed: {ex}");
         }
+
+        SetupTryOnHud();
+    }
+
+    private void SetupTryOnHud()
+    {
+        var layer = new CanvasLayer { Name = "TryOnHud" };
+        var button = new Button
+        {
+            Text = "试穿试刀",
+            Position = new Vector2(16, 16),
+        };
+        button.Pressed += OnTryOnPressed;
+        layer.AddChild(button);
+        AddChild(layer);
+    }
+
+    private void OnTryOnPressed()
+    {
+        if (_session is null || _playerView is null)
+            return;
+
+        _session.Player.TryEquip(StubEquipCatalog.TrialSwordId, out _);
+        _playerView.RefreshAfterEquip(_session.Player);
     }
 
     public override void _UnhandledInput(InputEvent @event)

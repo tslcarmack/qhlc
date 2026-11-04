@@ -27,6 +27,15 @@ public sealed class ActorAnimator
 
     public void ForceFrameForTest(int frame) => _animFrame = frame;
 
+    /// <summary>Clears synthesized frame cache after equip / appearance change.</summary>
+    public void InvalidateAppearanceCache()
+    {
+        _cachedRaster = null;
+        _bodyBlockId = 0;
+        _animFrame = 0;
+        _animClock = 0;
+    }
+
     /// <summary>
     /// Updates sticky walk facing from a character facing slot 0–7 (screen +Y down).
     /// Does not advance the frame clock; call <see cref="Tick"/> for playback.

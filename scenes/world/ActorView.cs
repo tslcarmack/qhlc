@@ -35,6 +35,14 @@ public sealed class ActorView
         Tick(0, character);
     }
 
+    /// <summary>Re-synthesize sprite after logical equip without touching pathfinding.</summary>
+    public void RefreshAfterEquip(Character character)
+    {
+        _animator.InvalidateAppearanceCache();
+        _animator.NotifyFacing(character.Facing);
+        Tick(0, character);
+    }
+
     public void Tick(double delta, Character character)
     {
         if (character.Behavior == BehaviorState.Walk)

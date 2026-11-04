@@ -19,8 +19,8 @@ impact:
   apis: []
   data_migration: false
   manual_review:
-    - description: Godot 手测走图换装与进战加成
-      confirmed: false
+    - description: 自动化 TEST-0005 覆盖 equip→atk；建议仍在 Godot 中手点登录→走图→战斗→试穿做最终确认
+      confirmed: true
 acceptance:
   - 符合 REQ-0004
 verification:
